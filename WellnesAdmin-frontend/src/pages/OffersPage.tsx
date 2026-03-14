@@ -1,8 +1,13 @@
-import { motion } from 'framer-motion';
-import { Tag, Users, CheckCircle, Clock, TrendingUp } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Tag, Users, CheckCircle, TrendingUp, Plus, Filter, Search, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { useIsMobile } from '@/hooks/useResponsive';
+import { NewOfferModal } from '@/components/NewOfferModal';
+import { OFFER_CATEGORIES } from '@/types';
+import type { Offer, OfferCategory } from '@/types';
 
-const OFFERS = [
+const INITIAL_OFFERS: Offer[] = [
   { id: '1', title: 'Weight Loss Starter', category: 'WEIGHT_LOSS', price: '$29.99', conversion: '12.4%', users: '1,240', status: 'active', color: 'orange' },
   { id: '2', title: 'Lean Strength Builder', category: 'STRENGTH', price: '$39.99', conversion: '8.2%', users: '860', status: 'active', color: 'emerald' },
   { id: '3', title: 'Flexibility Plus', category: 'WELLNESS', price: '$19.99', conversion: '5.1%', users: '420', status: 'paused', color: 'purple' },
@@ -11,48 +16,155 @@ const OFFERS = [
 ];
 
 export function OffersPage() {
+  const isMobile = useIsMobile();
+  const [offers, setOffers] = useState<Offer[]>(INITIAL_OFFERS);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<OfferCategory | 'ALL'>('ALL');
+
+  const filteredOffers = useMemo(() => {
+    return offers.filter(offer => {
+      const matchesSearch = offer.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = categoryFilter === 'ALL' || offer.category === categoryFilter;
+      return matchesSearch && matchesCategory;
+    });
+  }, [offers, searchQuery, categoryFilter]);
+
+  const activeOffersCount = offers.filter(o => o.status === 'active').length;
+  const totalUsers = offers.reduce((acc, o) => acc + parseInt(o.users.replace(',', '')), 0).toLocaleString();
+
   return (
-    <div className="h-full overflow-y-auto bg-[var(--color-bg)] p-6">
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Offers</h1>
-        <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Manage and track conversion for your onboarding offers</p>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <SummaryCard label="Active Offers" value="4" icon={<Tag className="w-4 h-4" />} color="bg-orange-50 text-orange-600" />
-        <SummaryCard label="Total Conversions" value="2,847" icon={<TrendingUp className="w-4 h-4" />} color="bg-emerald-50 text-emerald-600" />
-        <SummaryCard label="Avg. Conversion Rate" value="9.2%" icon={<CheckCircle className="w-4 h-4" />} color="bg-blue-50 text-blue-600" />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {OFFERS.map((offer, i) => (
-          <motion.div
-            key={offer.id}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.08 }}
+    <div className="h-full overflow-y-auto bg-[var(--color-bg)] p-4 md:p-6 pb-24 md:pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Offers</h1>
+          <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Manage and track conversion for your onboarding offers</p>
+        </div>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-black text-white text-sm font-black active:scale-95 transition-all shadow-lg active:shadow-md"
           >
-            <OfferCard {...offer} />
-          </motion.div>
-        ))}
+            <Plus className="w-4 h-4" /> New Offer
+          </button>
+        </div>
       </div>
+
+      {/* Stats Summary */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mb-8">
+        <SummaryCard label="Active Offers" value={activeOffersCount.toString()} icon={<Tag className="w-4 h-4" />} color="bg-orange-50 text-orange-600" />
+        <SummaryCard label="Total Reach" value={totalUsers} icon={<Users className="w-4 h-4" />} color="bg-emerald-50 text-emerald-600" />
+        <SummaryCard label="Avg. Conv" value="9.2%" icon={<TrendingUp className="w-4 h-4" />} color="bg-blue-50 text-blue-600" className="hidden lg:flex" />
+      </div>
+
+      {/* Filters & Search */}
+      <div className="flex flex-col md:flex-row md:items-center gap-3 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
+          <input
+            type="text"
+            placeholder="Search offers by title..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-black/5 transition-all shadow-sm"
+          />
+          {searchQuery && (
+            <button 
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full hover:bg-[var(--color-bg)]"
+            >
+              <X className="w-3 h-3 text-[var(--color-text-muted)]" />
+            </button>
+          )}
+        </div>
+        
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+          <FilterTab active={categoryFilter === 'ALL'} onClick={() => setCategoryFilter('ALL')} label="All" />
+          {OFFER_CATEGORIES.map(cat => (
+            <FilterTab 
+              key={cat.value} 
+              active={categoryFilter === cat.value} 
+              onClick={() => setCategoryFilter(cat.value)} 
+              label={cat.label} 
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Results Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <AnimatePresence mode="popLayout">
+          {filteredOffers.map((offer, i) => (
+            <motion.div
+              key={offer.id}
+              layout
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.2, delay: i * 0.05 }}
+            >
+              <OfferCard {...offer} />
+            </motion.div>
+          ))}
+        </AnimatePresence>
+        
+        {filteredOffers.length === 0 && (
+          <div className="col-span-full py-20 flex flex-col items-center justify-center text-center">
+            <div className="w-16 h-16 rounded-3xl bg-[var(--color-surface-2)] flex items-center justify-center text-[var(--color-text-muted)] mb-4">
+              <Search className="w-8 h-8" />
+            </div>
+            <p className="text-sm font-bold text-[var(--color-text-primary)]">No offers found</p>
+            <p className="text-xs text-[var(--color-text-muted)] mt-1">Try adjusting your filters or search query</p>
+            <button 
+              onClick={() => { setSearchQuery(''); setCategoryFilter('ALL'); }}
+              className="mt-4 text-xs font-black uppercase tracking-widest text-black underline"
+            >
+              Clear all filters
+            </button>
+          </div>
+        )}
+      </div>
+
+      <NewOfferModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onAdd={newOffer => setOffers([newOffer, ...offers])}
+      />
     </div>
   );
 }
 
-function SummaryCard({ label, value, icon, color }: { label: string; value: string; icon: React.ReactNode; color: string }) {
+function SummaryCard({ label, value, icon, color, className }: any) {
   return (
-    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 shadow-[var(--shadow-card)]">
-      <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center mb-3", color)}>
+    <div className={cn("bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 md:p-5 shadow-sm flex items-center md:items-start md:flex-col gap-4 md:gap-3", className)}>
+      <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-inner", color)}>
         {icon}
       </div>
-      <p className="text-2xl font-bold text-[var(--color-text-primary)] mb-0.5">{value}</p>
-      <p className="text-xs text-[var(--color-text-muted)] font-medium uppercase tracking-wider">{label}</p>
+      <div>
+        <p className="text-xl md:text-2xl font-black text-[var(--color-text-primary)] leading-tight">{value}</p>
+        <p className="text-[10px] md:text-xs text-[var(--color-text-muted)] font-black uppercase tracking-widest">{label}</p>
+      </div>
     </div>
   );
 }
 
-function OfferCard({ title, category, price, conversion, users, status, color }: any) {
+function FilterTab({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "px-4 py-2 rounded-xl text-xs font-black transition-all whitespace-nowrap border",
+        active 
+          ? "bg-black text-white border-black shadow-md shadow-black/5" 
+          : "bg-[var(--color-surface)] text-[var(--color-text-secondary)] border-[var(--color-border)] hover:border-black/20"
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
+function OfferCard({ title, category, price, conversion, users, status, color }: Offer) {
   const colorMap: any = {
     orange: 'bg-orange-50 text-orange-600 border-orange-100',
     emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100',
@@ -61,40 +173,41 @@ function OfferCard({ title, category, price, conversion, users, status, color }:
   };
 
   return (
-    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-5 shadow-[var(--shadow-card)] group hover:shadow-[var(--shadow-card-hover)] transition-all flex flex-col h-full">
+    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-5 shadow-sm group hover:shadow-md transition-all flex flex-col h-full active:scale-[0.99]">
       <div className="flex items-start justify-between mb-4">
-        <div>
-          <span className={cn("inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mb-2 border", colorMap[color])}>
-            {category}
+        <div className="min-w-0">
+          <span className={cn("inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest mb-2 border", colorMap[color])}>
+            {category.replace('_', ' ')}
           </span>
-          <h3 className="font-bold text-[var(--color-text-primary)] leading-tight group-hover:text-black transition-colors">{title}</h3>
+          <h3 className="font-black text-[var(--color-text-primary)] leading-tight group-hover:text-black transition-colors truncate">{title}</h3>
         </div>
-        <div className={cn("px-2 py-1 rounded-full text-[10px] font-semibold capitalize", 
-          status === 'active' ? 'bg-emerald-100 text-emerald-700' : 
-          status === 'paused' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'
+        <div className={cn("shrink-0 px-2 py-1 rounded-full text-[10px] font-black capitalize border shadow-sm", 
+          status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 
+          status === 'paused' ? 'bg-amber-50 text-amber-700 border-amber-100' : 
+          'bg-slate-50 text-slate-700 border-slate-100'
         )}>
           {status}
         </div>
       </div>
       
-      <div className="flex items-center gap-4 mb-5 p-3 bg-[var(--color-bg)] rounded-xl border border-[var(--color-border)]">
-        <div>
-          <p className="text-[10px] text-[var(--color-text-muted)] font-semibold uppercase mb-0.5">Price</p>
-          <p className="text-sm font-bold text-[var(--color-text-primary)]">{price}</p>
+      <div className="flex items-center gap-4 mb-5 p-3 bg-[var(--color-surface-2)]/50 rounded-xl border border-[var(--color-border)]/50">
+        <div className="flex-1">
+          <p className="text-[9px] text-[var(--color-text-muted)] font-black uppercase mb-0.5">Price</p>
+          <p className="text-sm font-black text-[var(--color-text-primary)]">{price}</p>
         </div>
-        <div className="w-px h-6 bg-[var(--color-border)] opacity-50" />
-        <div>
-          <p className="text-[10px] text-[var(--color-text-muted)] font-semibold uppercase mb-0.5">Conv.</p>
-          <p className="text-sm font-bold text-emerald-600">{conversion}</p>
+        <div className="w-px h-6 bg-[var(--color-border)] opacity-60" />
+        <div className="flex-1">
+          <p className="text-[9px] text-[var(--color-text-muted)] font-black uppercase mb-0.5">Conv.</p>
+          <p className="text-sm font-black text-emerald-600">{conversion}</p>
         </div>
       </div>
 
-      <div className="mt-auto flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-[var(--color-text-muted)]">
-          <Users className="w-3.5 h-3.5" />
-          <span className="text-xs font-semibold">{users} <span className="font-normal">users</span></span>
+      <div className="mt-auto flex items-center justify-between pt-2 border-t border-[var(--color-border)]/50">
+        <div className="flex items-center gap-2 text-[var(--color-text-muted)]">
+          <Users className="w-4 h-4" />
+          <span className="text-xs font-black leading-none">{users} <span className="font-bold text-[9px] uppercase tracking-tighter ml-0.5 opacity-60">users</span></span>
         </div>
-        <button className="text-xs font-bold text-[var(--color-text-primary)] hover:underline">Edit Details</button>
+        <button className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-primary)] hover:underline active:opacity-60">Edit Details</button>
       </div>
     </div>
   );

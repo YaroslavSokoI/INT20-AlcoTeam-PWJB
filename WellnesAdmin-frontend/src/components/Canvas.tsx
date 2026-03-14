@@ -11,6 +11,7 @@ import { LabeledEdge } from '@/components/edges/LabeledEdge';
 import { GraphControls } from '@/components/GraphControls';
 import { useFlowStore } from '@/store/flowStore';
 import type { FlowNode, FlowEdge, NodeType } from '@/types';
+import { useIsMobile } from '@/hooks/useResponsive';
 
 const nodeTypes = { question: QuestionNode, info: InfoNode, offer: OfferNode, result: ResultNode, conditional: ConditionalNode, delay: DelayNode };
 const edgeTypes = { labeled: LabeledEdge };
@@ -18,6 +19,7 @@ const edgeTypes = { labeled: LabeledEdge };
 export function Canvas() {
   const { nodes, edges, setSelectedNodeId, addNode, addEdge, setFlowNodes, setFlowEdges, deleteNode, deleteEdge, undo, redo } = useFlowStore();
   const { screenToFlowPosition } = useReactFlow();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -71,8 +73,18 @@ export function Canvas() {
         proOptions={{ hideAttribution: true }}
       >
         <Background variant={BackgroundVariant.Dots} color="var(--color-border)" gap={20} size={1} />
-        <MiniMap nodeColor={n => ({ question: '#c7d7fa', info: '#a7e9cc', offer: '#fdd5b0', result: '#d8b4fe', conditional: '#fca5a5', delay: '#d8b4fe' }[n.type ?? ''] ?? '#e5e7eb')}
-          nodeBorderRadius={8} maskColor="rgba(246,244,242,0.8)" style={{ width: 140, height: 90 }} />
+        <MiniMap 
+          position={isMobile ? "top-right" : "bottom-right"}
+          nodeColor={n => ({ question: '#c7d7fa', info: '#a7e9cc', offer: '#fdd5b0', result: '#d8b4fe', conditional: '#fca5a5', delay: '#d8b4fe' }[n.type ?? ''] ?? '#e5e7eb')}
+          nodeBorderRadius={8} 
+          maskColor="rgba(246,244,242,0.8)" 
+          style={{ 
+            width: isMobile ? 80 : 140, 
+            height: isMobile ? 55 : 90,
+            marginTop: isMobile ? '3rem' : '0', // Tighter to topbar
+            marginRight: isMobile ? '-4px' : '0' // Push closer to edge
+          }} 
+        />
         <GraphControls />
       </ReactFlow>
     </div>

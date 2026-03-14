@@ -3,10 +3,13 @@ import { useReactFlow, Panel } from '@xyflow/react';
 import { ZoomIn, ZoomOut, Maximize2, LayoutDashboard } from 'lucide-react';
 import { useFlowStore } from '@/store/flowStore';
 import { getAutoLayout } from '@/lib/layout';
+import { useIsMobile } from '@/hooks/useResponsive';
+import { cn } from '@/lib/cn';
 
 export function GraphControls() {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
   const { nodes, edges, setFlowNodes, publishVersion } = useFlowStore();
+  const isMobile = useIsMobile();
 
   const handleAutoLayout = useCallback(() => {
     const laid = getAutoLayout(nodes, edges);
@@ -14,35 +17,69 @@ export function GraphControls() {
     setTimeout(() => fitView({ padding: 0.15, duration: 400 }), 50);
   }, [nodes, edges, setFlowNodes, fitView]);
 
+  const statsBar = (
+    <div className={cn(
+      "flex items-center gap-2 px-2.5 py-1 bg-[var(--color-surface)] rounded-full border border-[var(--color-border)] shadow-sm",
+      isMobile ? "mt-12 ml-0" : "" // Push closer to edge
+    )}>
+      <div className="flex items-center gap-1">
+        <span className="text-[11px] font-bold text-[var(--color-text-primary)]">{nodes.length}</span>
+        <span className="text-[9px] text-[var(--color-text-muted)] font-medium">n</span>
+      </div>
+      <div className="w-px h-2.5 bg-[var(--color-border)]" />
+      <div className="flex items-center gap-1">
+        <span className="text-[11px] font-bold text-[var(--color-text-primary)]">{edges.length}</span>
+        <span className="text-[9px] text-[var(--color-text-muted)] font-medium">e</span>
+      </div>
+      <div className="w-px h-2.5 bg-[var(--color-border)]" />
+      <div className="flex items-center gap-1">
+        <span className="text-[9px] font-black tracking-tight text-emerald-600">v{publishVersion}</span>
+      </div>
+    </div>
+  );
+
+  const controlsBar = (
+    <div className={cn(
+      "flex items-center bg-[var(--color-surface)] rounded-full border border-[var(--color-border)] shadow-sm overflow-hidden",
+      isMobile ? "mb-16 ml-0" : "" // Push closer to edge
+    )}>
+      <ControlButton icon={<ZoomIn className="w-3.5 h-3.5" />} title="Zoom in" onClick={() => zoomIn({ duration: 200 })} />
+      <div className="w-px h-3.5 bg-[var(--color-border)]" />
+      <ControlButton icon={<ZoomOut className="w-3.5 h-3.5" />} title="Zoom out" onClick={() => zoomOut({ duration: 200 })} />
+      <div className="w-px h-3.5 bg-[var(--color-border)]" />
+      <ControlButton icon={<Maximize2 className="w-3.5 h-3.5" />} title="Fit view" onClick={() => fitView({ padding: 0.15, duration: 300 })} />
+      <div className="w-px h-3.5 bg-[var(--color-border)]" />
+      <ControlButton icon={<LayoutDashboard className="w-3.5 h-3.5" />} title="Auto layout" onClick={handleAutoLayout} />
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <>
+        <Panel position="top-left" className="m-2">{statsBar}</Panel>
+        <Panel position="bottom-left" className="m-2">{controlsBar}</Panel>
+      </>
+    );
+  }
+
   return (
     <Panel position="bottom-left">
-      <div className="flex items-center gap-3 px-3 py-2 bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] shadow-[var(--shadow-card)] mb-3">
-        <div className="flex items-center gap-1">
-          <span className="text-xs font-semibold text-[var(--color-text-primary)]">{nodes.length}</span>
-          <span className="text-[10px] text-[var(--color-text-muted)]">nodes</span>
-        </div>
-        <div className="w-px h-3 bg-[var(--color-border)]" />
-        <div className="flex items-center gap-1">
-          <span className="text-xs font-semibold text-[var(--color-text-primary)]">{edges.length}</span>
-          <span className="text-[10px] text-[var(--color-text-muted)]">edges</span>
-        </div>
-        <div className="w-px h-3 bg-[var(--color-border)]" />
-        <div className="flex items-center gap-1">
-          <span className="text-xs font-semibold text-[var(--color-text-primary)]">v{publishVersion}</span>
-        </div>
-      </div>
-      <div className="flex flex-col bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] shadow-[var(--shadow-card)] overflow-hidden">
-        {[
-          { icon: <ZoomIn className="w-4 h-4" />, title: 'Zoom in',   action: () => zoomIn({ duration: 200 }) },
-          { icon: <ZoomOut className="w-4 h-4" />, title: 'Zoom out',  action: () => zoomOut({ duration: 200 }) },
-          { icon: <Maximize2 className="w-4 h-4" />, title: 'Fit view', action: () => fitView({ padding: 0.15, duration: 300 }) },
-          { icon: <LayoutDashboard className="w-4 h-4" />, title: 'Auto layout', action: handleAutoLayout },
-        ].map(b => (
-          <button key={b.title} onClick={b.action} title={b.title}
-            className="p-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg)] transition-colors border-b border-[var(--color-border)] last:border-b-0"
-          >{b.icon}</button>
-        ))}
+      <div className="flex flex-col gap-2 items-start mb-4">
+        {statsBar}
+        {controlsBar}
       </div>
     </Panel>
+  );
+}
+
+function ControlButton({ icon, title, onClick }: { icon: React.ReactNode; title: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className="p-2 md:p-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg)] active:bg-[var(--color-bg)] transition-colors active:scale-90"
+    >
+      {icon}
+    </button>
   );
 }
