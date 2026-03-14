@@ -261,6 +261,10 @@ export const apiService = {
     async getAnalyticsStats(range: string = '30D') {
         return fetchAdmin<AnalyticsStats>(`/analytics/stats?range=${range}`);
     },
+
+    async getOfferStats() {
+        return fetchAdmin<{ totalUsers: number; completedUsers: number; acceptedPlans: number }>('/analytics/offer-stats');
+    },
 };
 
 export interface DropoffItem {

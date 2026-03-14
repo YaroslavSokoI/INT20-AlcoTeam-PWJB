@@ -1,11 +1,13 @@
 import { motion } from 'framer-motion';
+import { api } from '../api/client';
 import type { OfferResult as OfferResultType, Offer } from '../types';
 
 interface Props {
   result: OfferResultType;
+  sessionId: string;
 }
 
-function OfferCard({ offer, index }: { offer: Offer; index: number }) {
+function OfferCard({ offer, index, onAccept }: { offer: Offer; index: number; onAccept: () => void }) {
   return (
     <motion.div
       className="bg-warm-50 rounded-2xl lg:rounded-3xl p-5 lg:p-7 border border-border"
@@ -48,14 +50,24 @@ function OfferCard({ offer, index }: { offer: Offer; index: number }) {
         <p className="text-sm text-text-secondary italic mb-4">{offer.why_text}</p>
       )}
 
-      <button className="w-full py-4 lg:py-[18px] bg-brand text-white rounded-full text-base lg:text-lg font-bold cursor-pointer hover:bg-brand-dark hover:shadow-md transition-all shadow-sm">
+      <button
+        onClick={onAccept}
+        className="w-full py-4 lg:py-[18px] bg-brand text-white rounded-full text-base lg:text-lg font-bold cursor-pointer hover:bg-brand-dark hover:shadow-md transition-all shadow-sm"
+      >
         {offer.cta_text}
       </button>
     </motion.div>
   );
 }
 
-export function OfferResult({ result }: Props) {
+export function OfferResult({ result, sessionId }: Props) {
+  const handleAccept = async () => {
+    try {
+      await api.acceptOffer(sessionId);
+    } catch (err) {
+      console.error('Failed to accept offer', err);
+    }
+  };
   return (
     <motion.div
       className="flex-1 bg-surface p-5 lg:p-8"
@@ -72,7 +84,7 @@ export function OfferResult({ result }: Props) {
 
       <div className="flex flex-col gap-5 lg:gap-6">
         {result.primary.map((offer, index) => (
-          <OfferCard key={offer.id} offer={offer} index={index} />
+          <OfferCard key={offer.id} offer={offer} index={index} onAccept={handleAccept} />
         ))}
 
       </div>

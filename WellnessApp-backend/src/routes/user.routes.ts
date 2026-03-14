@@ -328,4 +328,25 @@ router.get('/sessions/:id/offer', async (req: Request, res: Response) => {
   }
 });
 
+// ---- POST /api/user/sessions/:id/accept-offer ------------
+// Mark that the user accepted/clicked the offer CTA.
+router.post('/sessions/:id/accept-offer', async (req: Request, res: Response) => {
+  try {
+    const { rows } = await pool.query<Session>(
+      'SELECT * FROM sessions WHERE id = $1',
+      [req.params.id],
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Session not found' });
+
+    await pool.query(
+      `UPDATE sessions SET offer_accepted = TRUE, offer_accepted_at = NOW() WHERE id = $1`,
+      [req.params.id],
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to accept offer', detail: String(err) });
+  }
+});
+
 export default router;

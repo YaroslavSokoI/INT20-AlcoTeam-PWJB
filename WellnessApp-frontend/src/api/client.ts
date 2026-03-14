@@ -85,4 +85,10 @@ export const api = {
   getOffer(sessionId: string): Promise<OfferResult> {
     return request(`/user/sessions/${sessionId}/offer`);
   },
+
+  acceptOffer(sessionId: string): Promise<{ success: boolean }> {
+    return request(`/user/sessions/${sessionId}/accept-offer`, {
+      method: 'POST',
+    });
+  },
 };

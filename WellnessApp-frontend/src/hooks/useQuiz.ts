@@ -84,5 +84,5 @@ export function useQuiz() {
     }
   }, [sessionId, stepCount]);
 
-  return { stage, currentNode, offerResult, error, hasHistory, stepCount, totalSteps, startQuiz, beginQuiz, goToWelcome, submitAnswer, goBack };
+  return { stage, sessionId, currentNode, offerResult, error, hasHistory, stepCount, totalSteps, startQuiz, beginQuiz, goToWelcome, submitAnswer, goBack };
 }

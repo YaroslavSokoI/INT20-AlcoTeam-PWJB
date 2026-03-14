@@ -1,44 +1,77 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Tag, Users, CheckCircle, TrendingUp, Plus, Filter, Search, X } from 'lucide-react';
+import { Tag, Users, CheckCircle, Plus, Search, X, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useIsMobile } from '@/hooks/useResponsive';
 import { NewOfferModal } from '@/components/NewOfferModal';
-import { OFFER_CATEGORIES } from '@/types';
+import { EditOfferModal } from '@/components/EditOfferModal';
+import { getCategoryMeta } from '@/types';
 import type { Offer, OfferCategory } from '@/types';
-import { apiService } from '@/services/api';
+import { apiService, type BackendOffer } from '@/services/api';
+
+function mapBackendToOffer(o: BackendOffer): Offer {
+  const meta = getCategoryMeta(o.attribute_key || o.title || '');
+  return {
+    id: o.id,
+    title: o.title,
+    description: o.description || '',
+    slug: o.attribute_key || '',
+    cta_text: o.cta_text || 'Start My Journey',
+    digital_plan: o.digital_plan || '',
+    physical_kit: o.physical_kit || '',
+    why_text: o.why_text || '',
+    offer_priority: o.offer_priority || 0,
+    offer_conditions: o.offer_conditions || null,
+    status: 'active',
+    category: meta.value,
+    color: meta.color,
+  };
+}
 
 export function OffersPage() {
   const isMobile = useIsMobile();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<OfferCategory | 'ALL'>('ALL');
+  const [userStats, setUserStats] = useState({ totalUsers: 0, completedUsers: 0, acceptedPlans: 0 });
 
-  useEffect(() => {
-    async function loadOffers() {
-      try {
-        setIsLoading(true);
-        const backendOffers = await apiService.getOffers();
-        const mapped: Offer[] = backendOffers.map(o => ({
-          id: o.id,
-          title: o.title,
-          category: 'WELLNESS', // Fallback as BE doesn't have an explicit enum today
-          conversion: Math.floor(Math.random() * 15 + 1) + '.' + Math.floor(Math.random() * 9) + '%', // Mock stats
-          users: Math.floor(Math.random() * 2000 + 100).toLocaleString(), // Mock stats
-          status: 'active',
-          color: 'emerald',
-        }));
-        setOffers(mapped);
-      } catch (err) {
-        console.error('Failed to load offers', err);
-      } finally {
-        setIsLoading(false);
-      }
+  const loadOffers = async () => {
+    try {
+      setIsLoading(true);
+      const [backendOffers, stats] = await Promise.all([
+        apiService.getOffers(),
+        apiService.getOfferStats().catch(() => ({ totalUsers: 0, completedUsers: 0, acceptedPlans: 0 })),
+      ]);
+      setOffers(backendOffers.map(mapBackendToOffer));
+      setUserStats(stats);
+    } catch (err) {
+      console.error('Failed to load offers', err);
+    } finally {
+      setIsLoading(false);
     }
-    loadOffers();
-  }, []);
+  };
+
+  useEffect(() => { loadOffers(); }, []);
+
+  const handleDelete = async (id: string) => {
+    try {
+      await apiService.deleteOffer(id);
+      setOffers(prev => prev.filter(o => o.id !== id));
+    } catch (err) {
+      console.error('Failed to delete offer', err);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleOfferUpdated = (updated: BackendOffer) => {
+    setOffers(prev => prev.map(o => o.id === updated.id ? mapBackendToOffer(updated) : o));
+    setEditingOffer(null);
+  };
 
   const filteredOffers = useMemo(() => {
     return offers.filter(offer => {
@@ -48,15 +81,20 @@ export function OffersPage() {
     });
   }, [offers, searchQuery, categoryFilter]);
 
-  const activeOffersCount = offers.filter(o => o.status === 'active').length;
-  const totalUsers = offers.reduce((acc, o) => acc + parseInt(o.users.replace(/,/g, '')), 0).toLocaleString();
+  const CATEGORIES: { value: OfferCategory | 'ALL'; label: string }[] = [
+    { value: 'ALL', label: 'All' },
+    { value: 'WEIGHT_LOSS', label: 'Weight Loss' },
+    { value: 'STRENGTH', label: 'Strength' },
+    { value: 'WELLNESS', label: 'Wellness' },
+    { value: 'YOGA', label: 'Yoga' },
+  ];
 
   return (
     <div className="h-full overflow-y-auto bg-[var(--color-bg)] p-4 md:p-6 pb-24 md:pb-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Offers</h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Manage and track conversion for your onboarding offers</p>
+          <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Manage your onboarding offers</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -69,10 +107,10 @@ export function OffersPage() {
       </div>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mb-8">
-        <SummaryCard label="Active Offers" value={activeOffersCount.toString()} icon={<Tag className="w-4 h-4" />} color="bg-orange-50 text-orange-600" />
-        <SummaryCard label="Total Reach" value={totalUsers} icon={<Users className="w-4 h-4" />} color="bg-emerald-50 text-emerald-600" />
-        <SummaryCard label="Avg. Conv" value="9.2%" icon={<TrendingUp className="w-4 h-4" />} color="bg-blue-50 text-blue-600" className="hidden lg:flex" />
+      <div className="grid grid-cols-3 gap-3 md:gap-4 mb-8">
+        <SummaryCard label="Total Offers" value={offers.length.toString()} icon={<Tag className="w-4 h-4" />} color="bg-emerald-50 text-emerald-600" />
+        <SummaryCard label="Total Users" value={userStats.totalUsers.toLocaleString()} icon={<Users className="w-4 h-4" />} color="bg-blue-50 text-blue-600" />
+        <SummaryCard label="Accepted Plans" value={userStats.acceptedPlans.toLocaleString()} icon={<CheckCircle className="w-4 h-4" />} color="bg-orange-50 text-orange-600" />
       </div>
 
       {/* Filters & Search */}
@@ -87,24 +125,14 @@ export function OffersPage() {
             className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-black/5 transition-all shadow-sm"
           />
           {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full hover:bg-[var(--color-bg)]"
-            >
+            <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full hover:bg-[var(--color-bg)]">
               <X className="w-3 h-3 text-[var(--color-text-muted)]" />
             </button>
           )}
         </div>
-
         <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
-          <FilterTab active={categoryFilter === 'ALL'} onClick={() => setCategoryFilter('ALL')} label="All" />
-          {OFFER_CATEGORIES.map(cat => (
-            <FilterTab
-              key={cat.value}
-              active={categoryFilter === cat.value}
-              onClick={() => setCategoryFilter(cat.value)}
-              label={cat.label}
-            />
+          {CATEGORIES.map(cat => (
+            <FilterTab key={cat.value} active={categoryFilter === cat.value} onClick={() => setCategoryFilter(cat.value as any)} label={cat.label} />
           ))}
         </div>
       </div>
@@ -124,7 +152,11 @@ export function OffersPage() {
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.2, delay: i * 0.05 }}
               >
-                <OfferCard {...offer} />
+                <OfferCard
+                  offer={offer}
+                  onEdit={() => setEditingOffer(offer)}
+                  onDelete={() => setDeletingId(offer.id)}
+                />
               </motion.div>
             ))}
           </AnimatePresence>
@@ -137,10 +169,7 @@ export function OffersPage() {
             </div>
             <p className="text-sm font-bold text-[var(--color-text-primary)]">No offers found</p>
             <p className="text-xs text-[var(--color-text-muted)] mt-1">Try adjusting your filters or search query</p>
-            <button
-              onClick={() => { setSearchQuery(''); setCategoryFilter('ALL'); }}
-              className="mt-4 text-xs font-black uppercase tracking-widest text-black underline"
-            >
+            <button onClick={() => { setSearchQuery(''); setCategoryFilter('ALL'); }} className="mt-4 text-xs font-black uppercase tracking-widest text-black underline">
               Clear all filters
             </button>
           </div>
@@ -150,8 +179,47 @@ export function OffersPage() {
       <NewOfferModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onAdd={newOffer => setOffers([newOffer, ...offers])}
+        onAdd={newOffer => { setOffers([newOffer, ...offers]); }}
       />
+
+      {editingOffer && (
+        <EditOfferModal
+          offer={editingOffer}
+          onClose={() => setEditingOffer(null)}
+          onSaved={handleOfferUpdated}
+        />
+      )}
+
+      {/* Delete Confirmation */}
+      <AnimatePresence>
+        {deletingId && (
+          <>
+            <motion.div className="fixed inset-0 bg-black/40 z-[200]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setDeletingId(null)} />
+            <motion.div
+              className="fixed inset-x-4 top-[30%] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[360px] bg-white rounded-3xl border border-[var(--color-border)] shadow-2xl z-[201] p-6"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-[var(--color-text-primary)]">Delete Offer</h3>
+                  <p className="text-xs text-[var(--color-text-muted)]">This will also remove it from the graph</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => setDeletingId(null)} className="flex-1 py-3 rounded-2xl border border-[var(--color-border)] text-sm font-black text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)] transition-all">
+                  Cancel
+                </button>
+                <button onClick={() => handleDelete(deletingId)} className="flex-1 py-3 rounded-2xl bg-red-500 text-white text-sm font-black hover:bg-red-600 active:scale-[0.98] transition-all">
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -186,7 +254,7 @@ function FilterTab({ active, onClick, label }: { active: boolean; onClick: () =>
   );
 }
 
-function OfferCard({ title, category, conversion, users, status, color }: Offer) {
+function OfferCard({ offer, onEdit, onDelete }: { offer: Offer; onEdit: () => void; onDelete: () => void }) {
   const colorMap: any = {
     orange: 'bg-orange-50 text-orange-600 border-orange-100',
     emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100',
@@ -195,36 +263,53 @@ function OfferCard({ title, category, conversion, users, status, color }: Offer)
   };
 
   return (
-    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-5 shadow-sm group hover:shadow-md transition-all flex flex-col h-full active:scale-[0.99]">
-      <div className="flex items-start justify-between mb-4">
+    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-5 shadow-sm group hover:shadow-md transition-all flex flex-col h-full">
+      <div className="flex items-start justify-between mb-3">
         <div className="min-w-0">
-          <span className={cn("inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest mb-2 border", colorMap[color])}>
-            {category.replace('_', ' ')}
+          <span className={cn("inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest mb-2 border", colorMap[offer.color])}>
+            {offer.category.replace('_', ' ')}
           </span>
-          <h3 className="font-black text-[var(--color-text-primary)] leading-tight group-hover:text-black transition-colors truncate">{title}</h3>
+          <h3 className="font-black text-[var(--color-text-primary)] leading-tight truncate">{offer.title}</h3>
         </div>
-        <div className={cn("shrink-0 px-2 py-1 rounded-full text-[10px] font-black capitalize border shadow-sm",
-          status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-            status === 'paused' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-              'bg-slate-50 text-slate-700 border-slate-100'
-        )}>
-          {status}
-        </div>
+        {offer.slug && (
+          <span className="shrink-0 px-2 py-1 rounded-full text-[10px] font-bold text-[var(--color-text-muted)] bg-[var(--color-bg)] border border-[var(--color-border)]">
+            {offer.slug}
+          </span>
+        )}
       </div>
 
-      <div className="mb-5 p-3 bg-[var(--color-surface-2)]/50 rounded-xl border border-[var(--color-border)]/50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-[9px] text-[var(--color-text-muted)] font-black uppercase mb-0.5">Conversion Rate</p>
-          <p className="text-sm font-black text-emerald-600">{conversion}</p>
-        </div>
+      {offer.description && (
+        <p className="text-xs text-[var(--color-text-muted)] mb-3 line-clamp-2">{offer.description}</p>
+      )}
+
+      <div className="flex-1 space-y-1.5 mb-4">
+        {offer.digital_plan && (
+          <div className="text-[10px] font-bold text-[var(--color-text-muted)]">
+            <span className="uppercase tracking-wider opacity-60">Plan:</span> <span className="text-[var(--color-text-secondary)]">{offer.digital_plan}</span>
+          </div>
+        )}
+        {offer.physical_kit && (
+          <div className="text-[10px] font-bold text-[var(--color-text-muted)]">
+            <span className="uppercase tracking-wider opacity-60">Kit:</span> <span className="text-[var(--color-text-secondary)]">{offer.physical_kit}</span>
+          </div>
+        )}
+        {offer.offer_priority > 0 && (
+          <div className="text-[10px] font-bold text-[var(--color-text-muted)]">
+            Priority: <span className="text-[var(--color-text-secondary)]">{offer.offer_priority}</span>
+          </div>
+        )}
       </div>
 
-      <div className="mt-auto flex items-center justify-between pt-2 border-t border-[var(--color-border)]/50">
-        <div className="flex items-center gap-2 text-[var(--color-text-muted)]">
-          <Users className="w-4 h-4" />
-          <span className="text-xs font-black leading-none">{users} <span className="font-bold text-[9px] uppercase tracking-tighter ml-0.5 opacity-60">users</span></span>
+      <div className="flex items-center justify-between pt-3 border-t border-[var(--color-border)]/50">
+        <span className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">{offer.cta_text}</span>
+        <div className="flex items-center gap-1">
+          <button onClick={onEdit} className="p-2 rounded-xl hover:bg-[var(--color-bg)] transition-colors" title="Edit">
+            <Pencil className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+          </button>
+          <button onClick={onDelete} className="p-2 rounded-xl hover:bg-red-50 transition-colors" title="Delete">
+            <Trash2 className="w-3.5 h-3.5 text-red-400" />
+          </button>
         </div>
-        <button className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-primary)] hover:underline active:opacity-60">Edit Details</button>
       </div>
     </div>
   );

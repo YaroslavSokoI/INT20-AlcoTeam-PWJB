@@ -10,7 +10,7 @@ import { Header } from './Header';
 import { LoadingSpinner } from './LoadingSpinner';
 
 export function QuizContainer() {
-  const { stage, currentNode, offerResult, error, hasHistory, stepCount, totalSteps, startQuiz, beginQuiz, goToWelcome, submitAnswer, goBack } = useQuiz();
+  const { stage, sessionId, currentNode, offerResult, error, hasHistory, stepCount, totalSteps, startQuiz, beginQuiz, goToWelcome, submitAnswer, goBack } = useQuiz();
 
   useEffect(() => {
     startQuiz();
@@ -62,7 +62,7 @@ export function QuizContainer() {
   }
 
   if (stage === 'result' && offerResult) {
-    return <OfferResult result={offerResult} />;
+    return <OfferResult result={offerResult} sessionId={sessionId!} />;
   }
 
   if (!currentNode) return null;

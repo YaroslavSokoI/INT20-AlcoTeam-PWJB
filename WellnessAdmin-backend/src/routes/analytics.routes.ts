@@ -119,4 +119,23 @@ router.get('/stats', async (req: Request, res: Response) => {
   }
 });
 
+router.get('/offer-stats', async (_req: Request, res: Response) => {
+  try {
+    const { rows: [counts] } = await pool.query(`
+      SELECT
+        COUNT(*)::int AS total_users,
+        COUNT(*) FILTER (WHERE completed = TRUE)::int AS completed_users,
+        COUNT(*) FILTER (WHERE offer_accepted = TRUE)::int AS accepted_plans
+      FROM sessions
+    `);
+    res.json({
+      totalUsers: counts.total_users,
+      completedUsers: counts.completed_users,
+      acceptedPlans: counts.accepted_plans,
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch offer stats', detail: String(err) });
+  }
+});
+
 export default router;
