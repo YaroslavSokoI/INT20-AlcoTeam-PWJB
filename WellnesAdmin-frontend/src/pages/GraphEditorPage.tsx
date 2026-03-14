@@ -14,7 +14,6 @@ export function GraphEditorPage() {
   return (
     <ReactFlowProvider>
       <div className="flex h-full w-full overflow-hidden relative">
-        {/* Sidebar: Desktop fixed, Mobile overlay drawer */}
         {!isMobile ? (
           <Sidebar />
         ) : (
@@ -40,8 +39,7 @@ export function GraphEditorPage() {
 
         <main className="flex-1 relative overflow-hidden bg-[var(--color-bg)]">
           <Canvas />
-          
-          {/* Mobile Add Button */}
+
           {isMobile && !sidebarOpen && (
             <button
               onClick={() => setSidebarOpen(true)}

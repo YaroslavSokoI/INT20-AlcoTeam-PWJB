@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   GitGraph, Tag, BarChart2, Eye, Upload, Save, 
-  CheckCircle2, Activity, Menu, X, MoreVertical, Users2
+  CheckCircle2, Menu, X, MoreVertical, Users2
 } from 'lucide-react';
+import logo from '@/assets/logo.svg';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/cn';
 import { useFlowStore } from '@/store/flowStore';
@@ -26,13 +27,8 @@ export function Topbar() {
     <>
       <header className="flex items-center h-14 md:h-12 px-4 bg-[var(--color-surface)] border-b border-[var(--color-border)] shrink-0 z-[100] relative">
         <div className="flex items-center gap-2 mr-4 md:mr-6">
-          <div className="w-8 h-8 md:w-7 md:h-7 rounded-lg bg-[var(--color-text-primary)] flex items-center justify-center">
-            <Activity className="w-4 h-4 text-white" />
-          </div>
-          <div className="flex flex-col md:flex-row md:items-baseline md:gap-1.5">
-            <span className="font-semibold text-sm leading-tight">BetterMe</span>
-            {!isMobile && <span className="text-[10px] md:text-xs text-[var(--color-text-muted)] font-medium">Admin</span>}
-          </div>
+          <img src={logo} alt="Wellness" className="h-8 w-auto md:h-9" />
+          {!isMobile && <span className="text-[10px] md:text-xs text-[var(--color-text-muted)] font-medium">Admin</span>}
         </div>
 
         {/* Desktop Nav */}

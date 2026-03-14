@@ -20,7 +20,7 @@ export function GraphControls() {
   const statsBar = (
     <div className={cn(
       "flex items-center gap-2 px-2.5 py-1 bg-[var(--color-surface)] rounded-full border border-[var(--color-border)] shadow-sm",
-      isMobile ? "mt-4 ml-0" : "" // Push closer to edge
+      isMobile ? "mt-4 ml-0" : ""
     )}>
       <div className="flex items-center gap-1">
         <span className="text-[11px] font-bold text-[var(--color-text-primary)]">{nodes.length}</span>

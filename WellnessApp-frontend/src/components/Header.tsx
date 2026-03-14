@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
+import logo from '../assets/logo.svg';
 
 interface HeaderProps {
   onBack?: () => void;
@@ -32,8 +33,8 @@ export function Header({ onBack, canGoBack }: HeaderProps) {
   const currentLang = LANGUAGES.find(l => l.code === i18n.language) || LANGUAGES[1];
 
   return (
-    <header className="flex items-center justify-between px-5 py-4 lg:px-8 lg:py-5 shrink-0 bg-bg relative z-50">
-      <div className="flex-1">
+    <header className="flex items-center justify-between gap-4 px-5 py-4 lg:px-8 lg:py-5 shrink-0 bg-bg relative z-50">
+      <div className="flex-1 min-w-0">
         {canGoBack && onBack && (
           <button
             onClick={onBack}
@@ -45,7 +46,12 @@ export function Header({ onBack, canGoBack }: HeaderProps) {
         )}
       </div>
 
-      <div className="relative" ref={dropdownRef}>
+      <div className="flex-shrink-0 flex justify-center">
+        <img src={logo} alt="Wellness" className="h-12 w-auto lg:h-14" />
+      </div>
+
+      <div className="flex-1 flex justify-end min-w-0">
+        <div className="relative" ref={dropdownRef}>
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-surface hover:bg-warm-50 transition-colors text-sm font-medium text-text-primary cursor-pointer"
@@ -85,6 +91,7 @@ export function Header({ onBack, canGoBack }: HeaderProps) {
             </motion.div>
           )}
         </AnimatePresence>
+        </div>
       </div>
     </header>
   );
