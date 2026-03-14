@@ -1,12 +1,12 @@
 import { QuizContainer } from './components/QuizContainer';
-import './App.css';
 
-function App() {
+
+export default function App() {
   return (
-    <div className="max-w-[480px] mx-auto min-h-dvh flex flex-col bg-dark-bg text-white">
-      <QuizContainer />
+    <div className="min-h-[100dvh] w-full flex justify-center bg-bg font-sans selection:bg-brand/20">
+      <main className="w-full max-w-[480px] min-h-[100dvh] bg-bg flex flex-col relative mx-auto overflow-hidden">
+        <QuizContainer />
+      </main>
     </div>
   );
 }
-
-export default App;

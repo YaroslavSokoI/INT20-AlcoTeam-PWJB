@@ -49,6 +49,8 @@ export interface QuizSession {
   history: number[];
   status: 'in_progress' | 'completed';
   progress: number;
+  current_step: number;
+  total_steps: number;
 }
 
 export interface QuizResult {

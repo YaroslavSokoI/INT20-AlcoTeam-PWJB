@@ -1,14 +1,25 @@
 interface Props {
-  progress: number;
+  currentStep: number;
+  totalSteps: number;
 }
 
-export function ProgressBar({ progress }: Props) {
+export function ProgressBar({ currentStep, totalSteps }: Props) {
+  // We'll create an array of "segments"
+  const segments = Array.from({ length: totalSteps }, (_, i) => i);
+
   return (
-    <div className="w-full h-1 bg-dark-border rounded-sm overflow-hidden mb-6 shrink-0">
-      <div
-        className="h-full bg-gradient-to-r from-primary to-accent rounded-sm transition-[width] duration-400 ease-out"
-        style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
-      />
+    <div className="w-full flex items-center justify-between gap-1.5 mb-4 lg:mb-6 shrink-0">
+      {segments.map((index) => {
+        const isActive = index <= currentStep;
+        return (
+          <div
+            key={index}
+            className={`flex-1 h-1 lg:h-1.5 rounded-full transition-colors duration-500 ease-out ${
+              isActive ? 'bg-brand' : 'bg-warm-100'
+            }`}
+          />
+        );
+      })}
     </div>
   );
 }

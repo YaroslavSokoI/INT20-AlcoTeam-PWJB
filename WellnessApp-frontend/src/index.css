@@ -1,13 +1,44 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #6C63FF;
-  --color-primary-dark: #5A52D5;
-  --color-primary-light: #8B83FF;
-  --color-accent: #FF6584;
-  --color-dark-bg: #0F0F1A;
-  --color-dark-card: #1A1A2E;
-  --color-dark-card-hover: #252540;
-  --color-dark-border: #2A2A42;
-  --color-dark-text: #A0A0B8;
+  --color-warm-50: #FFF9F5;
+  --color-warm-100: #FFF3EB;
+  --color-warm-200: #FFE8D6;
+  --color-warm-300: #FDDCBF;
+  --color-warm-400: #F5C7A1;
+  --color-warm-500: #E8A878;
+  --color-warm-600: #D4895A;
+  --color-warm-700: #B86E3F;
+  --color-warm-800: #8C5230;
+  --color-warm-900: #5C3520;
+
+  --color-sage-50: #F4F7F4;
+  --color-sage-100: #E8EFE8;
+  --color-sage-200: #D1DFD1;
+  --color-sage-300: #A8C5A8;
+  --color-sage-400: #7FAA7F;
+  --color-sage-500: #5C8F5C;
+  --color-sage-600: #4A7A4A;
+
+  --color-brand: #C97B4B;
+  --color-brand-dark: #A8623A;
+  --color-brand-light: #E09A6A;
+  --color-accent: #7FAA7F;
+  --color-accent-dark: #5C8F5C;
+
+  --color-bg: #FFFFFF;
+  --color-surface: #FFFFFF;
+  --color-surface-hover: #FFFFFF;
+  --color-border: #F0E4D8;
+  --color-border-hover: #E8D0BC;
+  --color-text-primary: #3D2B1F;
+  --color-text-secondary: #8C7565;
+  --color-text-muted: #B8A89C;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
 }
