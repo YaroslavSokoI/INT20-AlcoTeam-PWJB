@@ -3,10 +3,13 @@ import { BackendNode, BackendEdge } from '@/services/api';
 
 export function mapFrontendNodeToBackend(node: FlowNode): Partial<BackendNode> {
     const isQuestion = node.type === 'question';
+    const isOffer = node.type === 'offer';
     return {
         type: node.type,
         title: node.data.label,
-        description: node.data.content || '',
+        description: isOffer
+            ? (node.data.offerDescription as string) || ''
+            : (node.data.content as string) || '',
         question_type: isQuestion
             ? (node.data.answerType === 'multi' ? 'multi_choice'
                 : node.data.answerType === 'input' ? 'text_input'
@@ -16,6 +19,8 @@ export function mapFrontendNodeToBackend(node: FlowNode): Partial<BackendNode> {
             ? node.data.options.map(o => ({ value: o.value, label: o.label }))
             : undefined,
         attribute_key: (node.data.attribute_key as string) || undefined,
+        cta_text: isOffer ? ((node.data.ctaText as string) || undefined) : undefined,
+        delay_seconds: node.type === 'delay' ? ((node.data.delaySeconds as number) ?? 0) : undefined,
         pos_x: Math.round(node.position.x),
         pos_y: Math.round(node.position.y),
         is_start: !!node.data.is_start,

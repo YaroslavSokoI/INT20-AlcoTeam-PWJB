@@ -26,18 +26,16 @@ export interface QuizNode {
 
 export interface Offer {
   id: string;
-  name: string;
-  slug: string;
+  title: string;
+  attribute_key?: string;  // slug
   description?: string;
   digital_plan?: string;
   physical_kit?: string;
   why_text?: string;
-  cta_text: string;
-  priority: number;
-  is_addon: boolean;
+  cta_text?: string;
+  offer_priority?: number;
 }
 
 export interface OfferResult {
   primary: Offer[];
-  addon: Offer | null;
 }

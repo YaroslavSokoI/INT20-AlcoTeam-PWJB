@@ -28,7 +28,7 @@ export interface FlowStore {
   undo: () => void;
   redo: () => void;
 
-  publish: () => void;
+  publish: () => Promise<void>;
   setFlowNodes: (nodes: FlowNode[]) => void;
   setFlowEdges: (edges: FlowEdge[]) => void;
 }

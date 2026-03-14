@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import * as graph from '../services/graph.service.js';
-import type { CreateOfferBody } from '../types/index.js';
+import type { CreateNodeBody } from '../types/index.js';
 
 const router = Router();
 
@@ -28,9 +28,9 @@ router.get('/:id', async (req: Request, res: Response) => {
 // POST /api/admin/offers
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const body = req.body as CreateOfferBody;
-    if (!body.name || !body.slug) {
-      return res.status(400).json({ error: 'name and slug are required' });
+    const body = req.body as Partial<CreateNodeBody>;
+    if (!body.title) {
+      return res.status(400).json({ error: 'title is required' });
     }
     const offer = await graph.createOffer(body);
     res.status(201).json(offer);
@@ -42,7 +42,7 @@ router.post('/', async (req: Request, res: Response) => {
 // PUT /api/admin/offers/:id
 router.put('/:id', async (req: Request, res: Response) => {
   try {
-    const offer = await graph.updateOffer(req.params.id, req.body as Partial<CreateOfferBody>);
+    const offer = await graph.updateOffer(req.params.id, req.body as Partial<CreateNodeBody>);
     if (!offer) return res.status(404).json({ error: 'Offer not found' });
     res.json(offer);
   } catch (err) {

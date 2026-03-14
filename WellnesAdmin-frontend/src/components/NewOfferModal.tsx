@@ -35,16 +35,15 @@ export function NewOfferModal({ isOpen, onClose, onAdd }: NewOfferModalProps) {
       const { apiService } = await import('@/services/api');
 
       const created = await apiService.createOffer({
-        name: formData.title,
-        slug: formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-        description: '', // Fallback
-        priority: 0,
-        is_addon: false,
+        title: formData.title,
+        attribute_key: formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        description: '',
+        offer_priority: 0,
       });
 
       const newOffer: Offer = {
         id: created.id,
-        title: created.name,
+        title: created.title,
         category: formData.category as OfferCategory,
         status: formData.status as OfferStatus,
         conversion: '0%',

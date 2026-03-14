@@ -218,11 +218,15 @@ export const useFlowStore = create<FlowStore>((set, get) => ({
     set({ nodes: next.nodes, edges: next.edges, past: [...get().past.slice(-50), { nodes, edges }], future: future.slice(1) });
   },
 
-  publish() {
-    // In a real app we might bulk save or set a 'published' flag on the graph DB.
-    // For now, since nodes/edges sync on edit, we just bump version locally.
-    set(s => ({ isPublished: true, publishVersion: s.publishVersion + 1 }));
-    alert('Changes are live!');
+  async publish() {
+    try {
+      await apiService.publish();
+      set(s => ({ isPublished: true, publishVersion: s.publishVersion + 1 }));
+      alert('Changes are live!');
+    } catch (err) {
+      console.error('Publish failed', err);
+      alert('Publish failed. Check console for details.');
+    }
   },
   setFlowNodes(nodes) { set({ nodes }); },
   setFlowEdges(edges) { set({ edges }); },

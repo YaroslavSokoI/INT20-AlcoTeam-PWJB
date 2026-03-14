@@ -15,6 +15,13 @@ export interface DbNode {
   question_type?: QuestionType;
   options?: NodeOption[];
   attribute_key?: string;
+  cta_text?: string;
+  delay_seconds?: number;
+  digital_plan?: string;
+  physical_kit?: string;
+  why_text?: string;
+  offer_conditions?: unknown;
+  offer_priority?: number;
   pos_x: number;
   pos_y: number;
   is_start: boolean;
@@ -31,21 +38,6 @@ export interface DbEdge {
   priority: number;
   source_handle: string | null;
   target_handle: string | null;
-  created_at: string;
-}
-
-export interface DbOffer {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-  digital_plan?: string;
-  physical_kit?: string;
-  why_text?: string;
-  cta_text: string;
-  conditions: Condition | null;
-  priority: number;
-  is_addon: boolean;
   created_at: string;
 }
 
@@ -73,6 +65,13 @@ export interface CreateNodeBody {
   question_type?: QuestionType;
   options?: NodeOption[];
   attribute_key?: string;
+  cta_text?: string;
+  delay_seconds?: number;
+  digital_plan?: string;
+  physical_kit?: string;
+  why_text?: string;
+  offer_conditions?: Condition | null;
+  offer_priority?: number;
   pos_x?: number;
   pos_y?: number;
   is_start?: boolean;
@@ -86,17 +85,4 @@ export interface CreateEdgeBody {
   priority?: number;
   source_handle?: string | null;
   target_handle?: string | null;
-}
-
-export interface CreateOfferBody {
-  name: string;
-  slug: string;
-  description?: string;
-  digital_plan?: string;
-  physical_kit?: string;
-  why_text?: string;
-  cta_text?: string;
-  conditions?: Condition | null;
-  priority?: number;
-  is_addon?: boolean;
 }

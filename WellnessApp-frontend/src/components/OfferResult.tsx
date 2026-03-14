@@ -13,7 +13,7 @@ function OfferCard({ offer, index }: { offer: Offer; index: number }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.15 }}
     >
-      <h2 className="text-xl lg:text-2xl font-bold text-text-primary mb-2">{offer.name}</h2>
+      <h2 className="text-xl lg:text-2xl font-bold text-text-primary mb-2">{offer.title}</h2>
       {offer.description && (
         <p className="text-text-secondary text-sm lg:text-[15px] leading-relaxed mb-5">{offer.description}</p>
       )}
@@ -75,12 +75,6 @@ export function OfferResult({ result }: Props) {
           <OfferCard key={offer.id} offer={offer} index={index} />
         ))}
 
-        {result.addon && (
-          <div>
-            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">Recommended Add-on</p>
-            <OfferCard offer={result.addon} index={result.primary.length} />
-          </div>
-        )}
       </div>
     </motion.div>
   );

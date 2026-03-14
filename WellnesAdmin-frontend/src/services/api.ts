@@ -35,6 +35,8 @@ export interface BackendNode {
     question_type?: string;
     options?: Array<{ value: string; label: string; icon?: string }>;
     attribute_key?: string;
+    cta_text?: string;
+    delay_seconds?: number;
     pos_x: number;
     pos_y: number;
     is_start: boolean;
@@ -56,16 +58,19 @@ export interface BackendEdge {
 
 export interface BackendOffer {
     id: string;
-    name: string;
-    slug: string;
+    type: 'offer';
+    title: string;
     description?: string;
+    attribute_key?: string;  // slug
+    cta_text?: string;
     digital_plan?: string;
     physical_kit?: string;
     why_text?: string;
-    cta_text?: string;
-    conditions?: any;
-    priority: number;
-    is_addon: boolean;
+    offer_conditions?: any;
+    offer_priority?: number;
+    pos_x?: number;
+    pos_y?: number;
+    created_at?: string;
 }
 
 export interface BackendAdmin {
@@ -106,7 +111,9 @@ export function mapBackendNodeToFrontend(beNode: BackendNode): FlowNode {
             attribute_key: beNode.attribute_key,
             is_start: beNode.is_start,
             offerTitle: beNode.title,
-            offerDescription: beNode.description,
+            offerDescription: beNode.description || '',
+            ctaText: beNode.cta_text || '',
+            delaySeconds: beNode.delay_seconds ?? 0,
         },
     };
 }
@@ -244,6 +251,10 @@ export const apiService = {
             method: 'POST',
             body: JSON.stringify(data),
         });
+    },
+
+    async publish() {
+        return fetchAdmin<{ success: boolean }>('/publish', { method: 'POST' });
     },
 
     // Analytics

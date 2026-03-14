@@ -13,7 +13,7 @@ router.post('/sessions', async (req: Request, res: Response) => {
   try {
     // Find the start node
     const { rows: startNodes } = await pool.query<DbNode>(
-      'SELECT * FROM nodes WHERE is_start = TRUE LIMIT 1',
+      'SELECT * FROM published_nodes_full WHERE is_start = TRUE LIMIT 1',
     );
     if (startNodes.length === 0) {
       return res.status(500).json({ error: 'No start node configured' });
@@ -25,7 +25,7 @@ router.post('/sessions', async (req: Request, res: Response) => {
     // Recursive resolution for starting nodes if they are non-interactive
     while (resolvedNode && (resolvedNode.type === 'conditional' || resolvedNode.type === 'delay')) {
       const { rows: conditionalEdges } = await pool.query<DbEdge>(
-        'SELECT * FROM edges WHERE source_node_id = $1 ORDER BY priority DESC',
+        'SELECT * FROM published_edges WHERE source_node_id = $1 ORDER BY priority DESC',
         [resolvedNodeId],
       );
 
@@ -38,7 +38,7 @@ router.post('/sessions', async (req: Request, res: Response) => {
 
       resolvedNodeId = solvedEdge.target_node_id;
       const { rows: nodes } = await pool.query<DbNode>(
-        'SELECT * FROM nodes WHERE id = $1',
+        'SELECT * FROM published_nodes_full WHERE id = $1',
         [resolvedNodeId],
       );
       resolvedNode = nodes[0] ?? null;
@@ -49,7 +49,7 @@ router.post('/sessions', async (req: Request, res: Response) => {
     }
 
     const { rows: countRows } = await pool.query<{ count: string }>(
-      "SELECT COUNT(*) as count FROM nodes WHERE type = 'question'",
+      "SELECT COUNT(*) as count FROM published_nodes_full WHERE type = 'question'",
     );
     const totalNodes = parseInt(countRows[0].count, 10);
 
@@ -114,7 +114,7 @@ router.get('/sessions/:id', async (req: Request, res: Response) => {
 
     if (session.current_node_id) {
       const { rows: nodes } = await pool.query<DbNode>(
-        'SELECT * FROM nodes WHERE id = $1',
+        'SELECT * FROM published_nodes_full WHERE id = $1',
         [session.current_node_id],
       );
       currentNode = nodes[0] ?? null;
@@ -173,7 +173,7 @@ router.post('/sessions/:id/answer', async (req: Request, res: Response) => {
 
     // Find outgoing edges from the answered node
     const { rows: edges } = await pool.query<DbEdge>(
-      'SELECT * FROM edges WHERE source_node_id = $1 ORDER BY priority DESC',
+      'SELECT * FROM published_edges WHERE source_node_id = $1 ORDER BY priority DESC',
       [body.node_id],
     );
 
@@ -194,7 +194,7 @@ router.post('/sessions/:id/answer', async (req: Request, res: Response) => {
     // Recursive resolution for non-interactive nodes (e.g., conditional)
     while (nextNodeId) {
       const { rows: nodes } = await pool.query<DbNode>(
-        'SELECT * FROM nodes WHERE id = $1',
+        'SELECT * FROM published_nodes_full WHERE id = $1',
         [nextNodeId],
       );
       nextNode = nodes[0] ?? null;
@@ -205,7 +205,7 @@ router.post('/sessions/:id/answer', async (req: Request, res: Response) => {
 
       // If it's a non-interactive node (conditional/delay), resolve its outgoing edges
       const { rows: conditionalEdges } = await pool.query<DbEdge>(
-        'SELECT * FROM edges WHERE source_node_id = $1 ORDER BY priority DESC',
+        'SELECT * FROM published_edges WHERE source_node_id = $1 ORDER BY priority DESC',
         [nextNodeId],
       );
 
@@ -295,7 +295,7 @@ router.post('/sessions/:id/back', async (req: Request, res: Response) => {
 
     // Load the previous node to return
     const { rows: previousNodes } = await pool.query<DbNode>(
-      'SELECT * FROM nodes WHERE id = $1',
+      'SELECT * FROM published_nodes_full WHERE id = $1',
       [lastAnswer.node_id]
     );
     const previousNode = previousNodes[0] ?? null;

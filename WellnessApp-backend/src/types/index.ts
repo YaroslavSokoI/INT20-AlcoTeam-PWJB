@@ -36,16 +36,15 @@ export interface DbEdge {
 
 export interface DbOffer {
   id: string;
-  name: string;
-  slug: string;
+  title: string;
   description?: string;
+  cta_text?: string;
+  attribute_key?: string;  // slug
   digital_plan?: string;
   physical_kit?: string;
   why_text?: string;
-  cta_text: string;
-  conditions: Condition | null;
-  priority: number;
-  is_addon: boolean;
+  offer_conditions: Condition | null;
+  offer_priority: number;
   created_at: string;
 }
 
@@ -81,5 +80,4 @@ export interface SubmitAnswerBody {
 
 export interface OfferResult {
   primary: DbOffer[];
-  addon: DbOffer | null;
 }

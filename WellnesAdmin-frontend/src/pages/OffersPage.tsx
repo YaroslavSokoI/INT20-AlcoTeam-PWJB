@@ -23,7 +23,7 @@ export function OffersPage() {
         const backendOffers = await apiService.getOffers();
         const mapped: Offer[] = backendOffers.map(o => ({
           id: o.id,
-          title: o.name,
+          title: o.title,
           category: 'WELLNESS', // Fallback as BE doesn't have an explicit enum today
           conversion: Math.floor(Math.random() * 15 + 1) + '.' + Math.floor(Math.random() * 9) + '%', // Mock stats
           users: Math.floor(Math.random() * 2000 + 100).toLocaleString(), // Mock stats

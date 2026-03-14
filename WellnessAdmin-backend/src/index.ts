@@ -10,6 +10,7 @@ import offersRouter from './routes/offers.routes.js';
 import contentRouter from './routes/content.routes.js';
 import adminsRouter from './routes/admins.routes.js';
 import analyticsRouter from './routes/analytics.routes.js';
+import publishRouter from './routes/publish.routes.js';
 import { ensureDefaultAdmin } from './services/admin.service.js';
 
 // Initialize core data
@@ -33,6 +34,7 @@ app.use('/api/admin/edges', edgesRouter);
 app.use('/api/admin/offers', offersRouter);
 app.use('/api/admin/admins', adminsRouter);
 app.use('/api/admin/analytics', analyticsRouter);
+app.use('/api/admin/publish', publishRouter);
 
 // Admin graph convenience endpoint
 app.get('/api/admin/graph', async (_req, res) => {
