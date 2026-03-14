@@ -1,0 +1,165 @@
+import { Router, Request, Response } from 'express';
+import pool from '../db/client.js';
+import { resolveNextEdge } from '../services/rule-engine.js';
+import { resolveOffers } from '../services/offer.service.js';
+import type { DbNode, DbEdge, Session, SubmitAnswerBody } from '../types/index.js';
+
+const router = Router();
+
+// ---- POST /api/user/sessions ----------------------------
+// Create a new quiz session and return the first (start) node.
+router.post('/sessions', async (_req: Request, res: Response) => {
+  try {
+    // Find the start node
+    const { rows: startNodes } = await pool.query<DbNode>(
+      'SELECT * FROM nodes WHERE is_start = TRUE LIMIT 1',
+    );
+    if (startNodes.length === 0) {
+      return res.status(500).json({ error: 'No start node configured' });
+    }
+    const startNode = startNodes[0];
+
+    const { rows } = await pool.query<Session>(
+      `INSERT INTO sessions (current_node_id, attributes)
+       VALUES ($1, '{}') RETURNING *`,
+      [startNode.id],
+    );
+    const session = rows[0];
+
+    res.status(201).json({ sessionId: session.id, currentNode: startNode });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to create session', detail: String(err) });
+  }
+});
+
+// ---- GET /api/user/sessions/:id -------------------------
+// Get current session state + current node.
+router.get('/sessions/:id', async (req: Request, res: Response) => {
+  try {
+    const { rows } = await pool.query<Session>(
+      'SELECT * FROM sessions WHERE id = $1',
+      [req.params.id],
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Session not found' });
+
+    const session = rows[0];
+    let currentNode: DbNode | null = null;
+
+    if (session.current_node_id) {
+      const { rows: nodes } = await pool.query<DbNode>(
+        'SELECT * FROM nodes WHERE id = $1',
+        [session.current_node_id],
+      );
+      currentNode = nodes[0] ?? null;
+    }
+
+    res.json({ session, currentNode });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch session', detail: String(err) });
+  }
+});
+
+// ---- POST /api/user/sessions/:id/answer -----------------
+// Submit an answer for the current node; returns the next node or signals completion.
+router.post('/sessions/:id/answer', async (req: Request, res: Response) => {
+  try {
+    const sessionId = req.params.id;
+    const body = req.body as SubmitAnswerBody;
+
+    if (!body.node_id || body.value === undefined) {
+      return res.status(400).json({ error: 'node_id and value are required' });
+    }
+
+    // Load session
+    const { rows: sessionRows } = await pool.query<Session>(
+      'SELECT * FROM sessions WHERE id = $1',
+      [sessionId],
+    );
+    if (sessionRows.length === 0) return res.status(404).json({ error: 'Session not found' });
+
+    const session = sessionRows[0];
+    if (session.completed) {
+      return res.status(400).json({ error: 'Session is already completed' });
+    }
+
+    // Store the answer
+    await pool.query(
+      `INSERT INTO answers (session_id, node_id, attribute_key, value)
+       VALUES ($1, $2, $3, $4)`,
+      [
+        sessionId,
+        body.node_id,
+        body.attribute_key ?? null,
+        JSON.stringify(body.value),
+      ],
+    );
+
+    // Merge attribute into session.attributes
+    let updatedAttributes = { ...session.attributes };
+    if (body.attribute_key) {
+      updatedAttributes[body.attribute_key] = body.value;
+      await pool.query(
+        `UPDATE sessions SET attributes = attributes || $1::jsonb WHERE id = $2`,
+        [JSON.stringify({ [body.attribute_key]: body.value }), sessionId],
+      );
+    }
+
+    // Find outgoing edges from the answered node
+    const { rows: edges } = await pool.query<DbEdge>(
+      'SELECT * FROM edges WHERE source_node_id = $1 ORDER BY priority DESC',
+      [body.node_id],
+    );
+
+    const nextEdge = resolveNextEdge(edges, updatedAttributes);
+
+    if (!nextEdge) {
+      // No next node → quiz complete
+      await pool.query(
+        `UPDATE sessions SET completed = TRUE, completed_at = NOW(), current_node_id = NULL WHERE id = $1`,
+        [sessionId],
+      );
+      return res.json({ completed: true, nextNode: null });
+    }
+
+    // Load next node
+    const { rows: nextNodes } = await pool.query<DbNode>(
+      'SELECT * FROM nodes WHERE id = $1',
+      [nextEdge.target_node_id],
+    );
+    const nextNode = nextNodes[0] ?? null;
+
+    // Update session's current node
+    await pool.query(
+      'UPDATE sessions SET current_node_id = $1 WHERE id = $2',
+      [nextEdge.target_node_id, sessionId],
+    );
+
+    res.json({ completed: false, nextNode });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to process answer', detail: String(err) });
+  }
+});
+
+// ---- GET /api/user/sessions/:id/offer -------------------
+// Compute and return the personalized offer for a completed session.
+router.get('/sessions/:id/offer', async (req: Request, res: Response) => {
+  try {
+    const { rows } = await pool.query<Session>(
+      'SELECT * FROM sessions WHERE id = $1',
+      [req.params.id],
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Session not found' });
+
+    const session = rows[0];
+    if (!session.completed) {
+      return res.status(400).json({ error: 'Session is not yet completed' });
+    }
+
+    const result = await resolveOffers(session.attributes);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to resolve offer', detail: String(err) });
+  }
+});
+
+export default router;
