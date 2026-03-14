@@ -106,7 +106,7 @@ export function mapBackendNodeToFrontend(beNode: BackendNode): FlowNode {
             questionText: beNode.title,
             content: beNode.description || '',
             answerType: beNode.question_type === 'multi_choice' ? 'multi' : beNode.question_type === 'text_input' ? 'input' : 'single',
-            options: (beNode.options || []).map((o, idx) => ({ id: `opt-${idx}`, value: o.value, label: o.label })),
+            options: (beNode.options || []).map((o, idx) => ({ id: `opt-${idx}`, value: o.value, label: o.label, icon: o.icon })),
             attribute_key: beNode.attribute_key,
             is_start: beNode.is_start,
             offerTitle: beNode.title,

@@ -1,6 +1,7 @@
 import { useCallback, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Trash2, Plus, Save } from 'lucide-react';
+import { X, Trash2, Plus, Save, Search } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog';
 import { v4 as uuidv4 } from 'uuid';
 import { cn } from '@/lib/cn';
@@ -111,8 +112,14 @@ function NodeInspector({ nodeId, initialData, onClose, isMobile }: NodeInspector
     const opts = data.options ?? [];
     update({ options: [...opts, { id: uuidv4(), label: `Option ${opts.length + 1}`, value: `option_${opts.length + 1}` }] });
   };
-  const updateOption = (id: string, label: string) =>
-    update({ options: (data.options ?? []).map(o => o.id === id ? { ...o, label, value: label.toLowerCase().replace(/\s+/g, '_') } : o) });
+  const updateOption = (id: string, patch: { label?: string; icon?: string }) => {
+    update({ options: (data.options ?? []).map(o => {
+      if (o.id !== id) return o;
+      const updated = { ...o, ...patch };
+      if (patch.label !== undefined) updated.value = patch.label.toLowerCase().replace(/\s+/g, '_');
+      return updated;
+    })});
+  };
   const removeOption = (id: string) =>
     update({ options: (data.options ?? []).filter(o => o.id !== id) });
 
@@ -170,7 +177,7 @@ function NodeInspector({ nodeId, initialData, onClose, isMobile }: NodeInspector
               <Section label="Answer Options">
                 <div className="space-y-2">
                   {(data.options ?? []).map((opt, i) => (
-                    <OptionRow key={opt.id} option={opt} index={i} onChange={l => updateOption(opt.id, l)} onRemove={() => removeOption(opt.id)} />
+                    <OptionRow key={opt.id} option={opt} index={i} onChange={patch => updateOption(opt.id, patch)} onRemove={() => removeOption(opt.id)} />
                   ))}
                 </div>
                 <button onClick={addOption} className="mt-3 w-full py-2.5 rounded-xl border border-dashed border-[var(--color-border-2)] text-xs font-bold text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)] flex items-center justify-center gap-1.5">
@@ -378,11 +385,93 @@ function Section({ label, children }: { label: string; children: React.ReactNode
   );
 }
 
-function OptionRow({ option, index, onChange, onRemove }: { option: AnswerOption; index: number; onChange: (label: string) => void; onRemove: () => void }) {
+const POPULAR_ICONS = [
+  'Heart', 'Dumbbell', 'Apple', 'Moon', 'Sun', 'Flame', 'Target', 'Trophy',
+  'Brain', 'Smile', 'Frown', 'Clock', 'Zap', 'TrendingUp', 'Activity',
+  'Footprints', 'Salad', 'Bike', 'PersonStanding', 'Bed', 'Coffee', 'Droplets',
+  'Eye', 'Hand', 'Leaf', 'Mountain', 'Music', 'Star', 'ThumbsUp', 'Timer',
+  'Weight', 'Wind', 'Utensils', 'Pill', 'Sparkles', 'CircleCheck', 'CircleX',
+];
+
+function IconPicker({ value, onChange }: { value?: string; onChange: (icon: string | undefined) => void }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const allIconNames = Object.keys(LucideIcons).filter(
+    k => k[0] === k[0].toUpperCase() && k !== 'default' && k !== 'createLucideIcon' && typeof (LucideIcons as any)[k] === 'object'
+  );
+
+  const filtered = search
+    ? allIconNames.filter(n => n.toLowerCase().includes(search.toLowerCase())).slice(0, 40)
+    : POPULAR_ICONS;
+
+  const CurrentIcon = value ? (LucideIcons as any)[value] : null;
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={cn(
+          "w-8 h-8 flex items-center justify-center rounded-lg border transition-all shrink-0",
+          value ? "border-[var(--color-text-primary)] bg-[var(--color-bg)]" : "border-dashed border-[var(--color-border)] bg-transparent hover:bg-[var(--color-bg)]"
+        )}
+        title={value || 'Pick icon'}
+      >
+        {CurrentIcon ? <CurrentIcon className="w-4 h-4 text-[var(--color-text-primary)]" /> : <Plus className="w-3 h-3 text-[var(--color-text-muted)]" />}
+      </button>
+      {open && (
+        <div className="absolute left-0 top-9 z-50 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-xl p-2 w-[240px]">
+          <div className="relative mb-2">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[var(--color-text-muted)]" />
+            <input
+              autoFocus
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search icons..."
+              className="w-full text-[10px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] pl-6 pr-2 py-1.5 focus:outline-none"
+            />
+          </div>
+          <div className="grid grid-cols-7 gap-1 max-h-[160px] overflow-y-auto">
+            {value && (
+              <button
+                onClick={() => { onChange(undefined); setOpen(false); }}
+                className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-50 text-red-400"
+                title="Remove icon"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {filtered.map(name => {
+              const Icon = (LucideIcons as any)[name];
+              if (!Icon) return null;
+              return (
+                <button
+                  key={name}
+                  onClick={() => { onChange(name); setOpen(false); setSearch(''); }}
+                  className={cn(
+                    "w-7 h-7 flex items-center justify-center rounded-lg transition-all",
+                    value === name ? "bg-black text-white" : "hover:bg-[var(--color-bg)] text-[var(--color-text-secondary)]"
+                  )}
+                  title={name}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OptionRow({ option, index, onChange, onRemove }: { option: AnswerOption; index: number; onChange: (patch: { label?: string; icon?: string }) => void; onRemove: () => void }) {
   return (
     <div className="flex items-center gap-2 group">
       <div className="text-[10px] font-bold text-[var(--color-text-muted)] w-4 text-center">{index + 1}</div>
-      <input value={option.label} onChange={e => onChange(e.target.value)} className="flex-1 text-xs rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 focus:outline-none focus:border-[var(--color-text-primary)] transition-all" />
+      <IconPicker value={option.icon} onChange={icon => onChange({ icon })} />
+      <input value={option.label} onChange={e => onChange({ label: e.target.value })} className="flex-1 text-xs rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 focus:outline-none focus:border-[var(--color-text-primary)] transition-all" />
       <button onClick={onRemove} className="w-8 h-8 flex items-center justify-center rounded-xl text-red-400 hover:bg-red-50 transition-colors shrink-0">
         <X className="w-3.5 h-3.5" />
       </button>

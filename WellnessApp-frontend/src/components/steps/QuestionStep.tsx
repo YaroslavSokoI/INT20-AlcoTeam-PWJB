@@ -96,7 +96,7 @@ export function QuestionStep({ node, onAnswer }: Props) {
 
         {node.question_type === 'single_choice' && (
           <button
-            className="w-full py-3.5 lg:py-4 bg-[#3D2B1F] text-[#F0E4D8] rounded-[24px] text-[15px] lg:text-base font-semibold cursor-pointer mt-auto hover:opacity-90 transition-opacity disabled:opacity-35 disabled:cursor-not-allowed shadow-[0_4px_12px_rgba(61,43,31,0.15)] tracking-wide"
+            className="w-full py-3.5 lg:py-4 bg-brand text-white rounded-[24px] text-[15px] lg:text-base font-semibold cursor-pointer mt-auto hover:opacity-90 transition-opacity disabled:opacity-35 disabled:cursor-not-allowed shadow-sm tracking-wide"
             onClick={handleSubmit}
             disabled={!selected}
           >
@@ -130,7 +130,7 @@ export function QuestionStep({ node, onAnswer }: Props) {
               );
             })}
             <button
-              className="w-full py-3.5 lg:py-4 bg-[#3D2B1F] text-[#F0E4D8] rounded-[24px] text-[15px] lg:text-base font-semibold cursor-pointer mt-auto hover:opacity-90 transition-opacity disabled:opacity-35 disabled:cursor-not-allowed shadow-[0_4px_12px_rgba(61,43,31,0.15)] tracking-wide"
+              className="w-full py-3.5 lg:py-4 bg-brand text-white rounded-[24px] text-[15px] lg:text-base font-semibold cursor-pointer mt-auto hover:opacity-90 transition-opacity disabled:opacity-35 disabled:cursor-not-allowed shadow-sm tracking-wide"
               onClick={handleSubmit}
               disabled={!Array.isArray(selected) || selected.length === 0}
             >
@@ -149,7 +149,7 @@ export function QuestionStep({ node, onAnswer }: Props) {
               className="w-full px-5 py-4 bg-warm-50 border border-border rounded-2xl text-text-primary text-base outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all placeholder:text-text-muted"
             />
             <button
-              className="w-full py-3.5 lg:py-4 bg-[#3D2B1F] text-[#F0E4D8] rounded-[24px] text-[15px] lg:text-base font-semibold cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-35 disabled:cursor-not-allowed shadow-[0_4px_12px_rgba(61,43,31,0.15)] tracking-wide"
+              className="w-full py-3.5 lg:py-4 bg-brand text-white rounded-[24px] text-[15px] lg:text-base font-semibold cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-35 disabled:cursor-not-allowed shadow-sm tracking-wide"
               onClick={handleSubmit}
               disabled={!textValue.trim()}
             >
@@ -170,7 +170,7 @@ export function QuestionStep({ node, onAnswer }: Props) {
               className="w-full h-2 appearance-none bg-warm-200 rounded-full outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-7 [&::-webkit-slider-thumb]:h-7 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-brand [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md"
             />
             <button
-              className="w-full py-3.5 lg:py-4 bg-[#3D2B1F] text-[#F0E4D8] rounded-[24px] text-[15px] lg:text-base font-semibold cursor-pointer hover:opacity-90 transition-opacity shadow-[0_4px_12px_rgba(61,43,31,0.15)] tracking-wide"
+              className="w-full py-3.5 lg:py-4 bg-brand text-white rounded-[24px] text-[15px] lg:text-base font-semibold cursor-pointer hover:opacity-90 transition-opacity shadow-sm tracking-wide"
               onClick={handleSubmit}
             >
               {t('continue')}

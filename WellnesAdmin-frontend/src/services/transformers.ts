@@ -16,7 +16,7 @@ export function mapFrontendNodeToBackend(node: FlowNode): Partial<BackendNode> {
                     : 'single_choice')
             : undefined,
         options: isQuestion && node.data.options
-            ? node.data.options.map(o => ({ value: o.value, label: o.label }))
+            ? node.data.options.map(o => ({ value: o.value, label: o.label, icon: o.icon }))
             : undefined,
         attribute_key: (node.data.attribute_key as string) || undefined,
         cta_text: isOffer ? ((node.data.ctaText as string) || undefined) : undefined,

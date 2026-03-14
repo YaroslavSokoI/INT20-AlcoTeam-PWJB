@@ -6,6 +6,7 @@ export interface AnswerOption {
   id: string;
   label: string;
   value: string;
+  icon?: string;
 }
 
 export interface TransitionRule {

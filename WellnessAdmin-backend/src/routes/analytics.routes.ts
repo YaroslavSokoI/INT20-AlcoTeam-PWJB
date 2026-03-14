@@ -56,7 +56,7 @@ router.get('/stats', async (req: Request, res: Response) => {
     const { rows: dropoffs } = await pool.query<{ node_title: string; attribute_key: string | null; node_type: string; stuck_count: number }>(`
       SELECT n.title AS node_title, n.attribute_key, n.type AS node_type, COUNT(*)::int AS stuck_count
       FROM sessions s
-      JOIN nodes n ON n.id = s.current_node_id
+      JOIN nodes_full n ON n.id = s.current_node_id
       WHERE s.completed = FALSE AND s.current_node_id IS NOT NULL
         ${dateFilter.replace(/created_at/g, 's.created_at')}
       GROUP BY n.title, n.attribute_key, n.type
