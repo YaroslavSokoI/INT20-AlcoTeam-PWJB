@@ -1,0 +1,9 @@
+﻿.idea/
+node_modules
+
+.env
+.dev.env
+.DS_Store
+*.log
+npm-debug.log*
+.claude

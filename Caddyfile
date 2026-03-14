@@ -1,0 +1,16 @@
+:80 {
+    handle /admin/api/* {
+        uri strip_prefix /admin
+        reverse_proxy admin-backend:3001
+    }
+    handle /admin/* {
+        uri strip_prefix /admin
+        reverse_proxy admin-client:80
+    }
+    handle /api/* {
+        reverse_proxy app-backend:3002
+    }
+    handle {
+        reverse_proxy app-frontend:80
+    }
+}

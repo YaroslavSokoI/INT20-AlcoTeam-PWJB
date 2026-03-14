@@ -1,0 +1,68 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  admin-backend:
+    build: ./WellnessAdmin-backend
+    environment:
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      PORT: "3001"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3001:3001"
+
+  app-backend:
+    build: ./WellnessApp-backend
+    environment:
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      PORT: "3002"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3002:3002"
+
+  admin-client:
+    build: WellnesAdmin-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - admin-backend
+
+  app-frontend:
+    build: ./WellnessApp-frontend
+    ports:
+      - "5174:80"
+    depends_on:
+      - app-backend
+
+  caddy:
+    image: caddy:2-alpine
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+    ports:
+      - "80:80"
+    depends_on:
+      - admin-backend
+      - app-backend
+      - admin-client
+      - app-frontend
+
+volumes:
+  pgdata:
