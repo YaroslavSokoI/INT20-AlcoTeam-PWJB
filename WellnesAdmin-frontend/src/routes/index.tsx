@@ -3,6 +3,7 @@ import { App } from '@/App';
 import { GraphEditorPage } from '@/pages/GraphEditorPage';
 import { OffersPage } from '@/pages/OffersPage';
 import { AnalyticsPage } from '@/pages/AnalyticsPage';
+import { AdminsPage } from '@/pages/AdminsPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 
@@ -25,6 +26,7 @@ export const router = createBrowserRouter([
           { index: true, element: <GraphEditorPage /> },
           { path: 'offers', element: <OffersPage /> },
           { path: 'analytics', element: <AnalyticsPage /> },
+          { path: 'admins', element: <AdminsPage /> },
         ],
       },
     ]

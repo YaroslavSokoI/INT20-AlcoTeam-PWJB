@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   GitGraph, Tag, BarChart2, Eye, Upload, Save, 
-  CheckCircle2, Activity, Menu, X, MoreVertical 
+  CheckCircle2, Activity, Menu, X, MoreVertical, Users2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/cn';
@@ -41,6 +41,7 @@ export function Topbar() {
             <TopbarTab to="/" icon={<GitGraph className="w-3.5 h-3.5" />} label="Graph Editor" end />
             <TopbarTab to="/offers" icon={<Tag className="w-3.5 h-3.5" />} label="Offers" />
             <TopbarTab to="/analytics" icon={<BarChart2 className="w-3.5 h-3.5" />} label="Analytics" />
+            <TopbarTab to="/admins" icon={<Users2 className="w-3.5 h-3.5" />} label="Admins" />
           </nav>
         )}
 
@@ -140,6 +141,7 @@ export function Topbar() {
                 <MobileTab to="/" icon={<GitGraph className="w-5 h-5" />} label="Graph Editor" onClick={() => setMobileMenuOpen(false)} end />
                 <MobileTab to="/offers" icon={<Tag className="w-5 h-5" />} label="Offers" onClick={() => setMobileMenuOpen(false)} />
                 <MobileTab to="/analytics" icon={<BarChart2 className="w-5 h-5" />} label="Analytics" onClick={() => setMobileMenuOpen(false)} />
+                <MobileTab to="/admins" icon={<Users2 className="w-5 h-5" />} label="Admins" onClick={() => setMobileMenuOpen(false)} />
               </div>
             </motion.div>
           )}
