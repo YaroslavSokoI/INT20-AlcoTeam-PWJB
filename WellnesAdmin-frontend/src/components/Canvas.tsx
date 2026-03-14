@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ReactFlow, Background, BackgroundVariant,
   useReactFlow, ConnectionLineType,
@@ -6,22 +6,26 @@ import {
   applyNodeChanges, applyEdgeChanges,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { QuestionNode, InfoNode, OfferNode, ConditionalNode, DelayNode } from '@/components/nodes/NodeCards';
+import { QuestionNode, InfoNode, OfferNode, ConditionalNode } from '@/components/nodes/NodeCards';
 import { LabeledEdge } from '@/components/edges/LabeledEdge';
 import { GraphControls } from '@/components/GraphControls';
+import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog';
 import { useFlowStore } from '@/store/flowStore';
 import { getAutoLayout } from '@/lib/layout';
 import type { FlowNode, FlowEdge, NodeType } from '@/types';
 import { useIsMobile } from '@/hooks/useResponsive';
 
-const nodeTypes = { question: QuestionNode, info: InfoNode, offer: OfferNode, conditional: ConditionalNode, delay: DelayNode };
+const nodeTypes = { question: QuestionNode, info: InfoNode, offer: OfferNode, conditional: ConditionalNode };
 const edgeTypes = { labeled: LabeledEdge };
+
+type PendingDelete = { nodes: Node[]; edges: Edge[] } | null;
 
 export function Canvas() {
   const { nodes, edges, isLoading, setSelectedNodeId, setSelectedEdgeId, addNode, addEdge, setFlowNodes, setFlowEdges, deleteNode, deleteEdge, undo, redo } = useFlowStore();
   const { screenToFlowPosition, fitView } = useReactFlow();
   const isMobile = useIsMobile();
   const autoLayoutDone = useRef(false);
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete>(null);
 
   useEffect(() => {
     if (isLoading || nodes.length === 0 || autoLayoutDone.current) return;
@@ -51,14 +55,44 @@ export function Canvas() {
     addNode(type, screenToFlowPosition({ x: e.clientX, y: e.clientY }));
   }, [screenToFlowPosition, addNode]);
 
-  const onNodesChange: OnNodesChange = useCallback(changes => setFlowNodes(applyNodeChanges(changes, nodes as Node[]) as FlowNode[]), [nodes, setFlowNodes]);
-  const onEdgesChange: OnEdgesChange = useCallback(changes => setFlowEdges(applyEdgeChanges(changes, edges as Edge[]) as FlowEdge[]), [edges, setFlowEdges]);
+  const onNodesChange: OnNodesChange = useCallback(changes => {
+    const removals = changes.filter(c => c.type === 'remove');
+    if (removals.length > 0) return; // handled by onBeforeDelete
+    setFlowNodes(applyNodeChanges(changes, nodes as Node[]) as FlowNode[]);
+  }, [nodes, setFlowNodes]);
+  const onEdgesChange: OnEdgesChange = useCallback(changes => {
+    const removals = changes.filter(c => c.type === 'remove');
+    if (removals.length > 0) return; // handled by onBeforeDelete
+    setFlowEdges(applyEdgeChanges(changes, edges as Edge[]) as FlowEdge[]);
+  }, [edges, setFlowEdges]);
   const onConnect: OnConnect = useCallback(conn => addEdge({ source: conn.source ?? '', target: conn.target ?? '', sourceHandle: conn.sourceHandle, targetHandle: conn.targetHandle, type: 'labeled', data: { label: '' } }), [addEdge]);
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => setSelectedNodeId(node.id), [setSelectedNodeId]);
   const onEdgeClick = useCallback((_: React.MouseEvent, edge: Edge) => setSelectedEdgeId(edge.id), [setSelectedEdgeId]);
   const onPaneClick = useCallback(() => { setSelectedNodeId(null); setSelectedEdgeId(null); }, [setSelectedNodeId, setSelectedEdgeId]);
-  const onNodesDelete = useCallback((n: Node[]) => n.forEach(nd => deleteNode(nd.id)), [deleteNode]);
-  const onEdgesDelete = useCallback((e: Edge[]) => e.forEach(ed => deleteEdge(ed.id)), [deleteEdge]);
+
+  // Intercept delete — show confirm dialog instead of deleting immediately
+  const onBeforeDelete = useCallback(async ({ nodes: n, edges: e }: { nodes: Node[]; edges: Edge[] }) => {
+    if (n.length === 0 && e.length === 0) return true;
+    setPendingDelete({ nodes: n, edges: e });
+    return false; // prevent ReactFlow from deleting
+  }, []);
+
+  const handleDeleteConfirm = useCallback(() => {
+    if (!pendingDelete) return;
+    pendingDelete.nodes.forEach(n => deleteNode(n.id));
+    pendingDelete.edges.forEach(e => deleteEdge(e.id));
+    setPendingDelete(null);
+  }, [pendingDelete, deleteNode, deleteEdge]);
+
+  const deleteLabel = pendingDelete
+    ? pendingDelete.nodes.length > 0
+      ? pendingDelete.nodes.length === 1
+        ? `Node "${(pendingDelete.nodes[0].data as any)?.label || pendingDelete.nodes[0].id}" and its edges will be removed.`
+        : `${pendingDelete.nodes.length} nodes and their edges will be removed.`
+      : pendingDelete.edges.length === 1
+        ? 'This connection will be removed.'
+        : `${pendingDelete.edges.length} connections will be removed.`
+    : '';
 
   return (
     <div className="w-full h-full" onDragOver={onDragOver} onDrop={onDrop}>
@@ -73,8 +107,7 @@ export function Canvas() {
         onNodeClick={onNodeClick}
         onEdgeClick={onEdgeClick}
         onPaneClick={onPaneClick}
-        onNodesDelete={onNodesDelete}
-        onEdgesDelete={onEdgesDelete}
+        onBeforeDelete={onBeforeDelete}
         connectionLineType={ConnectionLineType.SmoothStep}
         deleteKeyCode={['Backspace', 'Delete']}
         fitView
@@ -87,6 +120,17 @@ export function Canvas() {
         <Background variant={BackgroundVariant.Dots} color="var(--color-border)" gap={20} size={1} />
         <GraphControls />
       </ReactFlow>
+      <DeleteConfirmDialog
+        open={pendingDelete !== null}
+        title={
+          pendingDelete && pendingDelete.nodes.length > 0
+            ? pendingDelete.nodes.length === 1 ? 'Delete node?' : `Delete ${pendingDelete.nodes.length} nodes?`
+            : pendingDelete && pendingDelete.edges.length === 1 ? 'Delete edge?' : `Delete ${pendingDelete?.edges.length ?? 0} edges?`
+        }
+        description={deleteLabel}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 }

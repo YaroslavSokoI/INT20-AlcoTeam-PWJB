@@ -4,7 +4,7 @@
 -- ── BASE ──────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS published_nodes (
   id         UUID PRIMARY KEY,
-  type       VARCHAR(20) NOT NULL CHECK (type IN ('question','info','offer','conditional','delay')),
+  type       VARCHAR(20) NOT NULL CHECK (type IN ('question','info','offer','conditional')),
   pos_x      FLOAT DEFAULT 0,
   pos_y      FLOAT DEFAULT 0,
   is_start   BOOLEAN DEFAULT FALSE,
@@ -45,12 +45,6 @@ CREATE TABLE IF NOT EXISTS published_conditional_nodes (
   title   TEXT NOT NULL DEFAULT ''
 );
 
-CREATE TABLE IF NOT EXISTS published_delay_nodes (
-  node_id       UUID PRIMARY KEY REFERENCES published_nodes(id) ON DELETE CASCADE,
-  title         TEXT NOT NULL DEFAULT '',
-  delay_seconds INT DEFAULT 0
-);
-
 -- ── UNIFIED READ VIEW ──────────────────────────────────────────────────
 CREATE OR REPLACE VIEW published_nodes_full AS
 SELECT
@@ -61,7 +55,7 @@ SELECT
   n.is_start,
   n.created_at,
   n.updated_at,
-  COALESCE(q.title, i.title, o.title, c.title, d.title, '') AS title,
+  COALESCE(q.title, i.title, o.title, c.title, '') AS title,
   CASE n.type
     WHEN 'info'  THEN i.content
     WHEN 'offer' THEN o.description
@@ -75,7 +69,6 @@ SELECT
     ELSE NULL
   END AS attribute_key,
   o.cta_text,
-  d.delay_seconds,
   o.digital_plan,
   o.physical_kit,
   o.why_text,
@@ -85,8 +78,7 @@ FROM published_nodes n
 LEFT JOIN published_question_nodes    q ON q.node_id = n.id
 LEFT JOIN published_info_nodes        i ON i.node_id = n.id
 LEFT JOIN published_offer_nodes       o ON o.node_id = n.id
-LEFT JOIN published_conditional_nodes c ON c.node_id = n.id
-LEFT JOIN published_delay_nodes       d ON d.node_id = n.id;
+LEFT JOIN published_conditional_nodes c ON c.node_id = n.id;
 
 -- ── EDGES ──────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS published_edges (
@@ -121,10 +113,6 @@ INSERT INTO published_offer_nodes (node_id, title, description, cta_text, slug, 
 
 INSERT INTO published_conditional_nodes (node_id, title)
   SELECT node_id, title FROM conditional_nodes
-  ON CONFLICT (node_id) DO NOTHING;
-
-INSERT INTO published_delay_nodes (node_id, title, delay_seconds)
-  SELECT node_id, title, delay_seconds FROM delay_nodes
   ON CONFLICT (node_id) DO NOTHING;
 
 INSERT INTO published_edges SELECT * FROM edges ON CONFLICT (id) DO NOTHING;

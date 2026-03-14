@@ -23,7 +23,7 @@ router.post('/sessions', async (req: Request, res: Response) => {
     let resolvedNodeId = startNode.id;
 
     // Recursive resolution for starting nodes if they are non-interactive
-    while (resolvedNode && (resolvedNode.type === 'conditional' || resolvedNode.type === 'delay')) {
+    while (resolvedNode && resolvedNode.type === 'conditional') {
       const { rows: conditionalEdges } = await pool.query<DbEdge>(
         'SELECT * FROM published_edges WHERE source_node_id = $1 ORDER BY priority DESC',
         [resolvedNodeId],
@@ -199,11 +199,11 @@ router.post('/sessions/:id/answer', async (req: Request, res: Response) => {
       );
       nextNode = nodes[0] ?? null;
 
-      if (!nextNode || (nextNode.type !== 'conditional' && nextNode.type !== 'delay')) {
+      if (!nextNode || nextNode.type !== 'conditional') {
         break;
       }
 
-      // If it's a non-interactive node (conditional/delay), resolve its outgoing edges
+      // If it's a conditional node, resolve its outgoing edges
       const { rows: conditionalEdges } = await pool.query<DbEdge>(
         'SELECT * FROM published_edges WHERE source_node_id = $1 ORDER BY priority DESC',
         [nextNodeId],

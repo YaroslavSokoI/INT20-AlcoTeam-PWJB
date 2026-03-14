@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { HelpCircle, Info, Tag, GitBranch, Clock, ChevronLeft } from 'lucide-react';
+import { HelpCircle, Info, Tag, GitBranch, ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useFlowStore } from '@/store/flowStore';
 import { NODE_TYPE_META } from '@/types';
@@ -11,7 +11,6 @@ const NODE_ICONS: Record<NodeType, React.ReactNode> = {
   info:        <Info className="w-4 h-4" />,
   offer:       <Tag className="w-4 h-4" />,
   conditional: <GitBranch className="w-4 h-4" />,
-  delay:       <Clock className="w-4 h-4" />,
 };
 
 interface SidebarProps {
@@ -27,7 +26,7 @@ export function Sidebar({ onClose }: SidebarProps) {
     e.dataTransfer.effectAllowed = 'move';
   }, []);
 
-  const nodeTypes: NodeType[] = ['question', 'info', 'offer', 'conditional', 'delay'];
+  const nodeTypes: NodeType[] = ['question', 'info', 'offer', 'conditional'];
 
   return (
     <aside className={cn(
@@ -113,7 +112,7 @@ function NodeListItem({ node, isSelected, onSelect }: { node: FlowNode; isSelect
     if (node.data.nodeType === 'info') return 'info page';
     if (node.data.nodeType === 'offer') return 'offer';
     if (node.data.nodeType === 'conditional') return 'branch';
-    return `${node.data.delaySeconds ?? 0}s delay`;
+    return '';
   };
 
   return (

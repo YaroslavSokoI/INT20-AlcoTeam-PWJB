@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { HelpCircle, Info, Tag, GitBranch, Clock } from 'lucide-react';
+import { HelpCircle, Info, Tag, GitBranch } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { NODE_TYPE_META } from '@/types';
 import type { NodeType, FlowNodeData } from '@/types';
@@ -22,7 +22,6 @@ const NODE_ICONS: Record<NodeType, React.ReactNode> = {
   info:        <Info className="w-3 h-3" />,
   offer:       <Tag className="w-3 h-3" />,
   conditional: <GitBranch className="w-3 h-3" />,
-  delay:       <Clock className="w-3 h-3" />,
 };
 
 function NodeBadge({ type }: { type: NodeType }) {
@@ -127,9 +126,11 @@ export const ConditionalNode = memo(({ id, data, selected }: NodeCardProps) => (
     </div>
     <div className="px-3 py-2.5">
       <p className="text-xs font-semibold text-[var(--color-text-primary)] mb-1">{data.label}</p>
-      <div className="text-[10px] text-[var(--color-text-muted)] font-mono bg-[var(--color-bg)] rounded px-2 py-1">
-        {data.label}
-      </div>
+      {!!data.condition && (
+        <div className="text-[10px] text-[var(--color-text-muted)] font-mono bg-[var(--color-bg)] rounded px-2 py-1">
+          {String(data.condition)}
+        </div>
+      )}
     </div>
     <Handle type="source" position={Position.Right} id="true"  style={{ top: '35%' }} className="!right-[-6px]" />
     <Handle type="source" position={Position.Right} id="false" style={{ top: '65%' }} className="!right-[-6px]" />
@@ -137,20 +138,3 @@ export const ConditionalNode = memo(({ id, data, selected }: NodeCardProps) => (
 ));
 ConditionalNode.displayName = 'ConditionalNode';
 
-// ─── Delay ────────────────────────────────────────────────────────────────
-
-export const DelayNode = memo(({ id, data, selected }: NodeCardProps) => (
-  <div className={cn('bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] shadow-[var(--shadow-card)] w-[200px]', selected && 'shadow-[var(--shadow-card-hover)]')}>
-    <Handle type="target" position={Position.Left} id="target" className="!left-[-6px]" />
-    <div className="flex items-center justify-between px-3 pt-2.5 pb-1.5 border-b border-[var(--color-border)]">
-      <NodeBadge type="delay" />
-      <span className="text-[10px] text-[var(--color-text-muted)] font-mono">#{shortId(id)}</span>
-    </div>
-    <div className="px-3 py-2.5">
-      <p className="text-xs font-semibold text-[var(--color-text-primary)]">{data.label}</p>
-      <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{data.delaySeconds ?? 0}s delay</p>
-    </div>
-    <Handle type="source" position={Position.Right} id="source" className="!right-[-6px]" />
-  </div>
-));
-DelayNode.displayName = 'DelayNode';

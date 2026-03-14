@@ -8,7 +8,7 @@ import { cn } from '@/lib/cn';
 
 export function GraphControls() {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
-  const { nodes, edges, setFlowNodes, publishVersion } = useFlowStore();
+  const { nodes, edges, setFlowNodes } = useFlowStore();
   const isMobile = useIsMobile();
 
   const handleAutoLayout = useCallback(() => {
@@ -30,10 +30,6 @@ export function GraphControls() {
       <div className="flex items-center gap-1">
         <span className="text-[11px] font-bold text-[var(--color-text-primary)]">{edges.length}</span>
         <span className="text-[9px] text-[var(--color-text-muted)] font-medium">e</span>
-      </div>
-      <div className="w-px h-2.5 bg-[var(--color-border)]" />
-      <div className="flex items-center gap-1">
-        <span className="text-[9px] font-black tracking-tight text-emerald-600">v{publishVersion}</span>
       </div>
     </div>
   );

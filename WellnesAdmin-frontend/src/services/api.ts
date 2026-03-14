@@ -36,7 +36,6 @@ export interface BackendNode {
     options?: Array<{ value: string; label: string; icon?: string }>;
     attribute_key?: string;
     cta_text?: string;
-    delay_seconds?: number;
     pos_x: number;
     pos_y: number;
     is_start: boolean;
@@ -93,7 +92,7 @@ export interface BackendAdmin {
 // For now, we adapt BE nodes with UI fallbacks based on type/metadata.
 export function mapBackendNodeToFrontend(beNode: BackendNode): FlowNode {
     let uiType: NodeType = beNode.type as NodeType;
-    if (!['question', 'info', 'offer', 'conditional', 'delay'].includes(uiType)) {
+    if (!['question', 'info', 'offer', 'conditional'].includes(uiType)) {
         uiType = 'info';
     }
 
@@ -113,7 +112,6 @@ export function mapBackendNodeToFrontend(beNode: BackendNode): FlowNode {
             offerTitle: beNode.title,
             offerDescription: beNode.description || '',
             ctaText: beNode.cta_text || '',
-            delaySeconds: beNode.delay_seconds ?? 0,
         },
     };
 }
