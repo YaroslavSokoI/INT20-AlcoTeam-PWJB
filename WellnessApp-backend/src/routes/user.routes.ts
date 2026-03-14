@@ -19,6 +19,11 @@ router.post('/sessions', async (_req: Request, res: Response) => {
     }
     const startNode = startNodes[0];
 
+    const { rows: countRows } = await pool.query<{ count: string }>(
+      "SELECT COUNT(*) as count FROM nodes WHERE type = 'question'",
+    );
+    const totalNodes = parseInt(countRows[0].count, 10);
+
     const { rows } = await pool.query<Session>(
       `INSERT INTO sessions (current_node_id, attributes)
        VALUES ($1, '{}') RETURNING *`,
@@ -26,7 +31,7 @@ router.post('/sessions', async (_req: Request, res: Response) => {
     );
     const session = rows[0];
 
-    res.status(201).json({ sessionId: session.id, currentNode: startNode });
+    res.status(201).json({ sessionId: session.id, currentNode: startNode, totalNodes });
   } catch (err) {
     res.status(500).json({ error: 'Failed to create session', detail: String(err) });
   }

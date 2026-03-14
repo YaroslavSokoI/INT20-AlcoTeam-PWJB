@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { api } from '../api/client';
 import type { QuizNode, OfferResult } from '../types';
 
-type QuizStage = 'loading' | 'quiz' | 'result' | 'error';
+type QuizStage = 'loading' | 'welcome' | 'quiz' | 'result' | 'error';
 
 export function useQuiz() {
   const [stage, setStage] = useState<QuizStage>('loading');
@@ -11,21 +11,31 @@ export function useQuiz() {
   const [offerResult, setOfferResult] = useState<OfferResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [stepCount, setStepCount] = useState(0);
-  const [canGoBack, setCanGoBack] = useState(false);
+  const [totalSteps, setTotalSteps] = useState(0);
+  const [hasHistory, setHasHistory] = useState(false);
 
   const startQuiz = useCallback(async () => {
     try {
       setStage('loading');
-      const { sessionId: sid, currentNode: node } = await api.createSession();
+      const { sessionId: sid, currentNode: node, totalNodes } = await api.createSession();
       setSessionId(sid);
       setCurrentNode(node);
-      setStepCount(0);
-      setCanGoBack(false);
-      setStage('quiz');
+      setTotalSteps(totalNodes);
+      setStepCount(node.type === 'question' ? 1 : 0);
+      setHasHistory(false);
+      setStage('welcome');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start quiz');
       setStage('error');
     }
+  }, []);
+
+  const beginQuiz = useCallback(() => {
+    setStage('quiz');
+  }, []);
+
+  const goToWelcome = useCallback(() => {
+    setStage('welcome');
   }, []);
 
   const submitAnswer = useCallback(async (answer: unknown) => {
@@ -39,14 +49,15 @@ export function useQuiz() {
       });
 
       if (response.completed) {
-        // Quiz done — fetch offer
         const result = await api.getOffer(sessionId);
         setOfferResult(result);
         setStage('result');
       } else if (response.nextNode) {
+        if (currentNode.type === 'question') {
+          setStepCount(prev => prev + 1);
+        }
         setCurrentNode(response.nextNode);
-        setStepCount(prev => prev + 1);
-        setCanGoBack(true);
+        setHasHistory(true);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit answer');
@@ -59,13 +70,13 @@ export function useQuiz() {
 
     try {
       const { currentNode: prevNode } = await api.goBack(sessionId);
+      if (currentNode?.type === 'question') {
+        setStepCount(prev => Math.max(0, prev - 1));
+      }
       setCurrentNode(prevNode);
-      setStepCount(prev => Math.max(0, prev - 1));
-      if (stepCount <= 1) setCanGoBack(false);
     } catch (err) {
-      // If we're at the beginning, backend returns 400 — just ignore
       if (err instanceof Error && err.message.includes('beginning')) {
-        setCanGoBack(false);
+        setHasHistory(false);
         return;
       }
       setError(err instanceof Error ? err.message : 'Failed to go back');
@@ -73,5 +84,5 @@ export function useQuiz() {
     }
   }, [sessionId, stepCount]);
 
-  return { stage, currentNode, offerResult, error, canGoBack, stepCount, startQuiz, submitAnswer, goBack };
+  return { stage, currentNode, offerResult, error, hasHistory, stepCount, totalSteps, startQuiz, beginQuiz, goToWelcome, submitAnswer, goBack };
 }

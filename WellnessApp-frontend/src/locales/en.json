@@ -1,4 +1,11 @@
 {
   "continue": "CONTINUE",
-  "back": "Back"
+  "back": "Back",
+  "welcome_title": "Your Wellness Journey Starts Here",
+  "welcome_description": "Answer a few quick questions and we'll create a personalized plan tailored to your goals, lifestyle, and preferences.",
+  "welcome_step1": "Tell us about your goals",
+  "welcome_step2": "Share your preferences",
+  "welcome_step3": "Get your personalized plan",
+  "get_started": "Let's Get Started",
+  "consent_notice": "By pressing the button, you agree to the processing of your personal data"
 }

@@ -155,17 +155,6 @@ VALUES (
   100, 900
 );
 
--- INFO: Final motivation before offer
-INSERT INTO nodes (id, type, title, description, question_type, options, attribute_key, pos_x, pos_y)
-VALUES (
-  '00000000-0000-0000-0000-000000000010',
-  'info',
-  'Your personalized plan is ready! 🎉',
-  'Based on your answers, we''ve crafted a program that matches your lifestyle, goals, and schedule. Thousands of people with your profile have already transformed their lives.',
-  NULL, NULL, NULL,
-  100, 1050
-);
-
 
 -- ---- EDGES -------------------------------------------------
 
@@ -266,11 +255,7 @@ VALUES ('00000000-0000-0000-0000-000000000007', '00000000-0000-0000-0000-0000000
 INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
 VALUES ('00000000-0000-0000-0000-000000000008', '00000000-0000-0000-0000-000000000009', NULL, NULL, 0);
 
--- Sleep quality → final info (offer ready)
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES ('00000000-0000-0000-0000-000000000009', '00000000-0000-0000-0000-000000000010', NULL, NULL, 0);
-
--- Final info node → NULL (no outgoing edge = quiz complete)
+-- Sleep quality → NULL (no outgoing edge = quiz complete)
 
 
 -- ---- OFFERS ------------------------------------------------

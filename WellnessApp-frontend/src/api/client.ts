@@ -17,6 +17,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 export interface StartSessionResponse {
   sessionId: string;
   currentNode: QuizNode;
+  totalNodes: number;
 }
 
 export interface AnswerResponse {

@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useQuiz } from '../hooks/useQuiz';
+import { WelcomeScreen } from './WelcomeScreen';
 import { QuestionStep } from './steps/QuestionStep';
 import { InfoStep } from './steps/InfoStep';
 import { OfferResult } from './OfferResult';
@@ -9,11 +10,19 @@ import { Header } from './Header';
 import { LoadingSpinner } from './LoadingSpinner';
 
 export function QuizContainer() {
-  const { stage, currentNode, offerResult, error, canGoBack, stepCount, startQuiz, submitAnswer, goBack } = useQuiz();
+  const { stage, currentNode, offerResult, error, hasHistory, stepCount, totalSteps, startQuiz, beginQuiz, goToWelcome, submitAnswer, goBack } = useQuiz();
 
   useEffect(() => {
     startQuiz();
   }, [startQuiz]);
+
+  const handleBack = useCallback(() => {
+    if (!hasHistory) {
+      goToWelcome();
+    } else {
+      goBack();
+    }
+  }, [hasHistory, goBack, goToWelcome]);
 
   if (stage === 'loading') {
     return <LoadingSpinner />;
@@ -37,6 +46,15 @@ export function QuizContainer() {
     );
   }
 
+  if (stage === 'welcome') {
+    return (
+      <>
+        <Header canGoBack={false} />
+        <WelcomeScreen onStart={beginQuiz} />
+      </>
+    );
+  }
+
   if (stage === 'result' && offerResult) {
     return <OfferResult result={offerResult} />;
   }
@@ -45,9 +63,9 @@ export function QuizContainer() {
 
   return (
     <div className="flex-1 flex flex-col">
-      <Header canGoBack={canGoBack} onBack={canGoBack ? goBack : undefined} />
+      <Header canGoBack={true} onBack={handleBack} />
       <div className="px-5 pt-2 lg:px-8 lg:pt-4">
-        <ProgressBar currentStep={stepCount} totalSteps={stepCount + 1} />
+        <ProgressBar currentStep={stepCount} totalSteps={totalSteps} />
       </div>
       <div className="flex-1 flex flex-col px-5 pb-6 lg:px-8 lg:pb-8">
         <AnimatePresence mode="wait">
