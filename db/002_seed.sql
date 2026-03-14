@@ -422,7 +422,7 @@ VALUES (
 
 -- Q5 → Q7: default fallback (strength+home, endurance+gym, etc.)
 INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES ('00000000-0000-0000-0000-000000000005','00000000-0000-0000-0000-000000000011','Default path',NULL,0);
+VALUES ('00000000-0000-0000-0000-000000000005','00000000-0000-0000-0000-000000000011',NULL,NULL,0);
 
 -- Branch exits → Q7 (universal convergence)
 INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
@@ -449,154 +449,120 @@ VALUES ('00000000-0000-0000-0000-000000000013','00000000-0000-0000-0000-00000000
 INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
 VALUES ('00000000-0000-0000-0000-000000000014','00000000-0000-0000-0000-000000000015',NULL,NULL,0);
 
--- INFO(15) → OFFER nodes (conditional routing — highest priority match wins)
+-- ── DECISION TREE: conditional nodes 23–30 ──────────────────────────────
+--
+--  15 (INFO)
+--  └─► 23 (goal = weight_loss?)
+--        TRUE  ─► 24 (context = home?)
+--                   TRUE  ─► 25 (time = 10_15?)
+--                              TRUE  ─► OFFER 17 Quick Fit
+--                              FALSE ─► OFFER 16 Weight Loss Starter
+--                   FALSE ─► 26 (injuries = none?)
+--                              TRUE  ─► OFFER 16 Weight Loss Starter
+--                              FALSE ─► OFFER 19 Low Impact
+--        FALSE ─► 27 (goal = strength?)
+--                   TRUE  ─► 28 (injuries = none?)
+--                              TRUE  ─► OFFER 18 Lean Strength
+--                              FALSE ─► OFFER 19 Low Impact
+--                   FALSE ─► 29 (goal = endurance?)
+--                              TRUE  ─► OFFER 20 Run 5K
+--                              FALSE ─► 30 (goal = flexibility?)
+--                                         TRUE  ─► OFFER 21 Yoga
+--                                         FALSE ─► OFFER 22 Stress Reset
 
--- → Quick Fit: weight_loss + home + 10-15 min  [priority 30]
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES (
-  '00000000-0000-0000-0000-000000000015',
-  '00000000-0000-0000-0000-000000000017',
-  '→ Quick Fit Micro-Workouts',
-  '{"type":"compound","operator":"AND","conditions":[
-    {"type":"simple","attribute":"goal","op":"eq","value":"weight_loss"},
-    {"type":"simple","attribute":"context","op":"eq","value":"home"},
-    {"type":"simple","attribute":"time_available","op":"eq","value":"10_15"}
-  ]}',
-  30
-);
+-- Node 23: Is goal weight_loss?
+INSERT INTO nodes (id, type, title, description, attribute_key, pos_x, pos_y)
+VALUES ('00000000-0000-0000-0000-000000000023','conditional','goal = weight_loss?',NULL,'goal',0,2500);
 
--- → Weight Loss Starter: weight_loss + home + 20-30/45+ min  [priority 29]
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES (
-  '00000000-0000-0000-0000-000000000015',
-  '00000000-0000-0000-0000-000000000016',
-  '→ Weight Loss Starter',
-  '{"type":"compound","operator":"AND","conditions":[
-    {"type":"simple","attribute":"goal","op":"eq","value":"weight_loss"},
-    {"type":"simple","attribute":"context","op":"eq","value":"home"},
-    {"type":"simple","attribute":"time_available","op":"in","value":["20_30","45_plus"]}
-  ]}',
-  29
-);
+-- Node 24: Is context home? (within weight_loss)
+INSERT INTO nodes (id, type, title, description, attribute_key, pos_x, pos_y)
+VALUES ('00000000-0000-0000-0000-000000000024','conditional','context = home?',NULL,'context',-700,2700);
 
--- → Low-Impact Fat Burn: weight_loss + gym + injuries  [priority 28]
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES (
-  '00000000-0000-0000-0000-000000000015',
-  '00000000-0000-0000-0000-000000000019',
-  '→ Low-Impact Fat Burn',
-  '{"type":"compound","operator":"AND","conditions":[
-    {"type":"simple","attribute":"goal","op":"eq","value":"weight_loss"},
-    {"type":"simple","attribute":"context","op":"eq","value":"gym"},
-    {"type":"simple","attribute":"injuries","op":"in","value":["knee","back","shoulder"]}
-  ]}',
-  28
-);
+-- Node 25: Is time 10–15 min? (weight_loss + home)
+INSERT INTO nodes (id, type, title, description, attribute_key, pos_x, pos_y)
+VALUES ('00000000-0000-0000-0000-000000000025','conditional','time = 10–15 min?',NULL,'time_available',-1000,2900);
 
--- → Weight Loss Starter: weight_loss + gym + no injuries  [priority 27]
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES (
-  '00000000-0000-0000-0000-000000000015',
-  '00000000-0000-0000-0000-000000000016',
-  '→ Weight Loss Starter (gym)',
-  '{"type":"compound","operator":"AND","conditions":[
-    {"type":"simple","attribute":"goal","op":"eq","value":"weight_loss"},
-    {"type":"simple","attribute":"context","op":"eq","value":"gym"},
-    {"type":"simple","attribute":"injuries","op":"eq","value":"none"}
-  ]}',
-  27
-);
+-- Node 26: No injuries? (weight_loss + gym)
+INSERT INTO nodes (id, type, title, description, attribute_key, pos_x, pos_y)
+VALUES ('00000000-0000-0000-0000-000000000026','conditional','injuries = none?',NULL,'injuries',-400,2900);
 
--- → Lean Strength Builder: strength + gym + no injuries  [priority 28]
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES (
-  '00000000-0000-0000-0000-000000000015',
-  '00000000-0000-0000-0000-000000000018',
-  '→ Lean Strength Builder',
-  '{"type":"compound","operator":"AND","conditions":[
-    {"type":"simple","attribute":"goal","op":"eq","value":"strength"},
-    {"type":"simple","attribute":"context","op":"eq","value":"gym"},
-    {"type":"simple","attribute":"injuries","op":"eq","value":"none"}
-  ]}',
-  28
-);
+-- Node 27: Is goal strength?
+INSERT INTO nodes (id, type, title, description, attribute_key, pos_x, pos_y)
+VALUES ('00000000-0000-0000-0000-000000000027','conditional','goal = strength?',NULL,'goal',700,2700);
 
--- → Low-Impact Fat Burn: strength + gym + injuries  [priority 28]
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES (
-  '00000000-0000-0000-0000-000000000015',
-  '00000000-0000-0000-0000-000000000019',
-  '→ Low-Impact (strength + injuries)',
-  '{"type":"compound","operator":"AND","conditions":[
-    {"type":"simple","attribute":"goal","op":"eq","value":"strength"},
-    {"type":"simple","attribute":"context","op":"eq","value":"gym"},
-    {"type":"simple","attribute":"injuries","op":"in","value":["knee","back","shoulder"]}
-  ]}',
-  28
-);
+-- Node 28: No injuries? (strength)
+INSERT INTO nodes (id, type, title, description, attribute_key, pos_x, pos_y)
+VALUES ('00000000-0000-0000-0000-000000000028','conditional','injuries = none?',NULL,'injuries',400,2900);
 
--- → Lean Strength Builder: strength fallback (home, outdoor, etc.)  [priority 10]
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES (
-  '00000000-0000-0000-0000-000000000015',
-  '00000000-0000-0000-0000-000000000018',
-  '→ Lean Strength Builder (fallback)',
-  '{"type":"simple","attribute":"goal","op":"eq","value":"strength"}',
-  10
-);
+-- Node 29: Is goal endurance?
+INSERT INTO nodes (id, type, title, description, attribute_key, pos_x, pos_y)
+VALUES ('00000000-0000-0000-0000-000000000029','conditional','goal = endurance?',NULL,'goal',1000,2900);
 
--- → Run Your First 5K: endurance + outdoor  [priority 28]
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES (
-  '00000000-0000-0000-0000-000000000015',
-  '00000000-0000-0000-0000-000000000020',
-  '→ Run Your First 5K',
-  '{"type":"compound","operator":"AND","conditions":[
-    {"type":"simple","attribute":"goal","op":"eq","value":"endurance"},
-    {"type":"simple","attribute":"context","op":"eq","value":"outdoor"}
-  ]}',
-  28
-);
+-- Node 30: Is goal flexibility?
+INSERT INTO nodes (id, type, title, description, attribute_key, pos_x, pos_y)
+VALUES ('00000000-0000-0000-0000-000000000030','conditional','goal = flexibility?',NULL,'goal',1300,3100);
 
--- → Run Your First 5K: endurance fallback  [priority 10]
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES (
-  '00000000-0000-0000-0000-000000000015',
-  '00000000-0000-0000-0000-000000000020',
-  '→ Run Your First 5K (fallback)',
-  '{"type":"simple","attribute":"goal","op":"eq","value":"endurance"}',
-  10
-);
+-- ── EDGES: decision tree ─────────────────────────────────────────────────
 
--- → Yoga & Mobility: flexibility  [priority 20]
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES (
-  '00000000-0000-0000-0000-000000000015',
-  '00000000-0000-0000-0000-000000000021',
-  '→ Yoga & Mobility',
-  '{"type":"simple","attribute":"goal","op":"eq","value":"flexibility"}',
-  20
-);
+-- 15 → 23 (single unconditional entry)
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
+VALUES ('00000000-0000-0000-0000-000000000015','00000000-0000-0000-0000-000000000023',NULL,NULL,0,'source',NULL);
 
--- → Stress Reset Program: stress_relief  [priority 20]
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES (
-  '00000000-0000-0000-0000-000000000015',
-  '00000000-0000-0000-0000-000000000022',
-  '→ Stress Reset Program',
-  '{"type":"simple","attribute":"goal","op":"eq","value":"stress_relief"}',
-  20
-);
+-- 23 → 24 TRUE (weight_loss)
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
+VALUES ('00000000-0000-0000-0000-000000000023','00000000-0000-0000-0000-000000000024','weight_loss','{"type":"simple","attribute":"goal","op":"eq","value":"weight_loss"}',10,'true',NULL);
+-- 23 → 27 FALSE (fallback)
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
+VALUES ('00000000-0000-0000-0000-000000000023','00000000-0000-0000-0000-000000000027',NULL,NULL,0,'false',NULL);
 
--- → Weight Loss Starter: default fallback  [priority 0]
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES (
-  '00000000-0000-0000-0000-000000000015',
-  '00000000-0000-0000-0000-000000000016',
-  '→ Default offer',
-  NULL,
-  0
-);
+-- 24 → 25 TRUE (home)
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
+VALUES ('00000000-0000-0000-0000-000000000024','00000000-0000-0000-0000-000000000025','home','{"type":"simple","attribute":"context","op":"eq","value":"home"}',10,'true',NULL);
+-- 24 → 26 FALSE (gym)
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
+VALUES ('00000000-0000-0000-0000-000000000024','00000000-0000-0000-0000-000000000026','gym',NULL,0,'false',NULL);
+
+-- 25 → OFFER 17 TRUE (10_15 min)
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
+VALUES ('00000000-0000-0000-0000-000000000025','00000000-0000-0000-0000-000000000017','10–15 min','{"type":"simple","attribute":"time_available","op":"eq","value":"10_15"}',10,'true',NULL);
+-- 25 → OFFER 16 FALSE (20–30 / 45+ min)
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
+VALUES ('00000000-0000-0000-0000-000000000025','00000000-0000-0000-0000-000000000016','20–30 / 45+ min',NULL,0,'false',NULL);
+
+-- 26 → OFFER 16 TRUE (no injuries)
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
+VALUES ('00000000-0000-0000-0000-000000000026','00000000-0000-0000-0000-000000000016','no injuries','{"type":"simple","attribute":"injuries","op":"eq","value":"none"}',10,'true',NULL);
+-- 26 → OFFER 19 FALSE (has injuries)
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
+VALUES ('00000000-0000-0000-0000-000000000026','00000000-0000-0000-0000-000000000019','has injuries',NULL,0,'false',NULL);
+
+-- 27 → 28 TRUE (strength)
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
+VALUES ('00000000-0000-0000-0000-000000000027','00000000-0000-0000-0000-000000000028','strength','{"type":"simple","attribute":"goal","op":"eq","value":"strength"}',10,'true',NULL);
+-- 27 → 29 FALSE (fallback)
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
+VALUES ('00000000-0000-0000-0000-000000000027','00000000-0000-0000-0000-000000000029',NULL,NULL,0,'false',NULL);
+
+-- 28 → OFFER 18 TRUE (no injuries)
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
+VALUES ('00000000-0000-0000-0000-000000000028','00000000-0000-0000-0000-000000000018','no injuries','{"type":"simple","attribute":"injuries","op":"eq","value":"none"}',10,'true',NULL);
+-- 28 → OFFER 19 FALSE (has injuries)
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
+VALUES ('00000000-0000-0000-0000-000000000028','00000000-0000-0000-0000-000000000019','has injuries',NULL,0,'false',NULL);
+
+-- 29 → OFFER 20 TRUE (endurance)
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
+VALUES ('00000000-0000-0000-0000-000000000029','00000000-0000-0000-0000-000000000020','endurance','{"type":"simple","attribute":"goal","op":"eq","value":"endurance"}',10,'true',NULL);
+-- 29 → 30 FALSE (fallback)
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
+VALUES ('00000000-0000-0000-0000-000000000029','00000000-0000-0000-0000-000000000030',NULL,NULL,0,'false',NULL);
+
+-- 30 → OFFER 21 TRUE (flexibility)
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
+VALUES ('00000000-0000-0000-0000-000000000030','00000000-0000-0000-0000-000000000021','flexibility','{"type":"simple","attribute":"goal","op":"eq","value":"flexibility"}',10,'true',NULL);
+-- 30 → OFFER 22 FALSE (stress_relief / other)
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
+VALUES ('00000000-0000-0000-0000-000000000030','00000000-0000-0000-0000-000000000022','stress / other',NULL,0,'false',NULL);
 
 -- OFFER nodes 16–22 are terminal (no outgoing edges) —
 -- when reached, the session is marked complete and the

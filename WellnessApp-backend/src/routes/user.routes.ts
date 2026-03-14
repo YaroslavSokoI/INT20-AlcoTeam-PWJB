@@ -19,6 +19,34 @@ router.post('/sessions', async (req: Request, res: Response) => {
       return res.status(500).json({ error: 'No start node configured' });
     }
     const startNode = startNodes[0];
+    let resolvedNode: DbNode | null = startNode;
+    let resolvedNodeId = startNode.id;
+
+    // Recursive resolution for starting nodes if they are non-interactive
+    while (resolvedNode && resolvedNode.type === 'conditional') {
+      const { rows: conditionalEdges } = await pool.query<DbEdge>(
+        'SELECT * FROM edges WHERE source_node_id = $1 ORDER BY priority DESC',
+        [resolvedNodeId],
+      );
+
+      // Note: for start nodes, we assume attributes are empty '{}'
+      const solvedEdge = resolveNextEdge(conditionalEdges, {});
+      if (!solvedEdge) {
+        resolvedNode = null;
+        break;
+      }
+
+      resolvedNodeId = solvedEdge.target_node_id;
+      const { rows: nodes } = await pool.query<DbNode>(
+        'SELECT * FROM nodes WHERE id = $1',
+        [resolvedNodeId],
+      );
+      resolvedNode = nodes[0] ?? null;
+    }
+
+    if (!resolvedNode) {
+      return res.status(500).json({ error: 'Failed to resolve an interactive start node' });
+    }
 
     const { rows: countRows } = await pool.query<{ count: string }>(
       "SELECT COUNT(*) as count FROM nodes WHERE type = 'question'",
@@ -50,7 +78,7 @@ router.post('/sessions', async (req: Request, res: Response) => {
       ) VALUES ($1, '{}', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *`,
       [
-        startNode.id,
+        resolvedNode.id,
         ip,
         os,
         browser,
@@ -65,7 +93,7 @@ router.post('/sessions', async (req: Request, res: Response) => {
     );
     const session = rows[0];
 
-    res.status(201).json({ sessionId: session.id, currentNode: startNode, totalNodes });
+    res.status(201).json({ sessionId: session.id, currentNode: resolvedNode, totalNodes });
   } catch (err) {
     res.status(500).json({ error: 'Failed to create session', detail: String(err) });
   }
@@ -160,17 +188,48 @@ router.post('/sessions/:id/answer', async (req: Request, res: Response) => {
       return res.json({ completed: true, nextNode: null });
     }
 
-    // Load next node
-    const { rows: nextNodes } = await pool.query<DbNode>(
-      'SELECT * FROM nodes WHERE id = $1',
-      [nextEdge.target_node_id],
-    );
-    const nextNode = nextNodes[0] ?? null;
+    let nextNodeId = nextEdge.target_node_id;
+    let nextNode: DbNode | null = null;
 
-    // Update session's current node
+    // Recursive resolution for non-interactive nodes (e.g., conditional)
+    while (nextNodeId) {
+      const { rows: nodes } = await pool.query<DbNode>(
+        'SELECT * FROM nodes WHERE id = $1',
+        [nextNodeId],
+      );
+      nextNode = nodes[0] ?? null;
+
+      if (!nextNode || nextNode.type !== 'conditional') {
+        break;
+      }
+
+      // If it's a conditional node, resolve its outgoing edges
+      const { rows: conditionalEdges } = await pool.query<DbEdge>(
+        'SELECT * FROM edges WHERE source_node_id = $1 ORDER BY priority DESC',
+        [nextNodeId],
+      );
+
+      const resolvedEdge = resolveNextEdge(conditionalEdges, updatedAttributes);
+      if (!resolvedEdge) {
+        nextNode = null;
+        nextNodeId = '';
+        break;
+      }
+      nextNodeId = resolvedEdge.target_node_id;
+    }
+
+    if (!nextNode) {
+      await pool.query(
+        `UPDATE sessions SET completed = TRUE, completed_at = NOW(), current_node_id = NULL WHERE id = $1`,
+        [sessionId],
+      );
+      return res.json({ completed: true, nextNode: null });
+    }
+
+    // Update session's current node to the final resolved interactive node
     await pool.query(
       'UPDATE sessions SET current_node_id = $1 WHERE id = $2',
-      [nextEdge.target_node_id, sessionId],
+      [nextNode.id, sessionId],
     );
 
     res.json({ completed: false, nextNode });

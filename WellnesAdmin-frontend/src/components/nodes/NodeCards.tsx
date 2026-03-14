@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { HelpCircle, Info, Tag, CheckSquare, GitBranch, Clock } from 'lucide-react';
+import { HelpCircle, Info, Tag, GitBranch, Clock } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { NODE_TYPE_META } from '@/types';
 import type { NodeType, FlowNodeData } from '@/types';
@@ -21,7 +21,6 @@ const NODE_ICONS: Record<NodeType, React.ReactNode> = {
   question:    <HelpCircle className="w-3 h-3" />,
   info:        <Info className="w-3 h-3" />,
   offer:       <Tag className="w-3 h-3" />,
-  result:      <CheckSquare className="w-3 h-3" />,
   conditional: <GitBranch className="w-3 h-3" />,
   delay:       <Clock className="w-3 h-3" />,
 };
@@ -117,24 +116,6 @@ export const OfferNode = memo(({ id, data, selected }: NodeCardProps) => {
 });
 OfferNode.displayName = 'OfferNode';
 
-// ─── Result ───────────────────────────────────────────────────────────────
-
-export const ResultNode = memo(({ id, data, selected }: NodeCardProps) => (
-  <div className={cn('bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] shadow-[var(--shadow-card)] w-[240px]', selected && 'shadow-[var(--shadow-card-hover)]')}>
-    <Handle type="target" position={Position.Left} id="target" className="!left-[-6px]" />
-    <div className="flex items-center justify-between px-3 pt-2.5 pb-1.5 border-b border-[var(--color-border)]">
-      <NodeBadge type="result" />
-      <span className="text-[10px] text-[var(--color-text-muted)] font-mono">#{shortId(id)}</span>
-    </div>
-    <div className="px-3 py-2.5">
-      <p className="text-xs font-semibold text-[var(--color-text-primary)] mb-1">{data.label}</p>
-      {data.content && <p className="text-[11px] text-[var(--color-text-secondary)] line-clamp-3">{data.content}</p>}
-    </div>
-    <Handle type="source" position={Position.Right} id="source" className="!right-[-6px]" />
-  </div>
-));
-ResultNode.displayName = 'ResultNode';
-
 // ─── Conditional ──────────────────────────────────────────────────────────
 
 export const ConditionalNode = memo(({ id, data, selected }: NodeCardProps) => (
@@ -147,7 +128,7 @@ export const ConditionalNode = memo(({ id, data, selected }: NodeCardProps) => (
     <div className="px-3 py-2.5">
       <p className="text-xs font-semibold text-[var(--color-text-primary)] mb-1">{data.label}</p>
       <div className="text-[10px] text-[var(--color-text-muted)] font-mono bg-[var(--color-bg)] rounded px-2 py-1">
-        {data.conditionField || 'field'} {data.conditionOperator || '='} {data.conditionValue || 'value'}
+        {data.label}
       </div>
     </div>
     <Handle type="source" position={Position.Right} id="true"  style={{ top: '35%' }} className="!right-[-6px]" />

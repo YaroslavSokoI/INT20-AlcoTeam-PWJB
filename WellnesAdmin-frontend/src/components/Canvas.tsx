@@ -6,7 +6,7 @@ import {
   applyNodeChanges, applyEdgeChanges,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { QuestionNode, InfoNode, OfferNode, ResultNode, ConditionalNode, DelayNode } from '@/components/nodes/NodeCards';
+import { QuestionNode, InfoNode, OfferNode, ConditionalNode, DelayNode } from '@/components/nodes/NodeCards';
 import { LabeledEdge } from '@/components/edges/LabeledEdge';
 import { GraphControls } from '@/components/GraphControls';
 import { useFlowStore } from '@/store/flowStore';
@@ -14,11 +14,11 @@ import { getAutoLayout } from '@/lib/layout';
 import type { FlowNode, FlowEdge, NodeType } from '@/types';
 import { useIsMobile } from '@/hooks/useResponsive';
 
-const nodeTypes = { question: QuestionNode, info: InfoNode, offer: OfferNode, result: ResultNode, conditional: ConditionalNode, delay: DelayNode };
+const nodeTypes = { question: QuestionNode, info: InfoNode, offer: OfferNode, conditional: ConditionalNode, delay: DelayNode };
 const edgeTypes = { labeled: LabeledEdge };
 
 export function Canvas() {
-  const { nodes, edges, isLoading, setSelectedNodeId, addNode, addEdge, setFlowNodes, setFlowEdges, deleteNode, deleteEdge, undo, redo } = useFlowStore();
+  const { nodes, edges, isLoading, setSelectedNodeId, setSelectedEdgeId, addNode, addEdge, setFlowNodes, setFlowEdges, deleteNode, deleteEdge, undo, redo } = useFlowStore();
   const { screenToFlowPosition, fitView } = useReactFlow();
   const isMobile = useIsMobile();
   const autoLayoutDone = useRef(false);
@@ -55,7 +55,8 @@ export function Canvas() {
   const onEdgesChange: OnEdgesChange = useCallback(changes => setFlowEdges(applyEdgeChanges(changes, edges as Edge[]) as FlowEdge[]), [edges, setFlowEdges]);
   const onConnect: OnConnect = useCallback(conn => addEdge({ source: conn.source ?? '', target: conn.target ?? '', sourceHandle: conn.sourceHandle, targetHandle: conn.targetHandle, type: 'labeled', data: { label: '' } }), [addEdge]);
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => setSelectedNodeId(node.id), [setSelectedNodeId]);
-  const onPaneClick = useCallback(() => setSelectedNodeId(null), [setSelectedNodeId]);
+  const onEdgeClick = useCallback((_: React.MouseEvent, edge: Edge) => setSelectedEdgeId(edge.id), [setSelectedEdgeId]);
+  const onPaneClick = useCallback(() => { setSelectedNodeId(null); setSelectedEdgeId(null); }, [setSelectedNodeId, setSelectedEdgeId]);
   const onNodesDelete = useCallback((n: Node[]) => n.forEach(nd => deleteNode(nd.id)), [deleteNode]);
   const onEdgesDelete = useCallback((e: Edge[]) => e.forEach(ed => deleteEdge(ed.id)), [deleteEdge]);
 
@@ -70,6 +71,7 @@ export function Canvas() {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onNodeClick={onNodeClick}
+        onEdgeClick={onEdgeClick}
         onPaneClick={onPaneClick}
         onNodesDelete={onNodesDelete}
         onEdgesDelete={onEdgesDelete}

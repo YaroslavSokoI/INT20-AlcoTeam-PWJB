@@ -4,6 +4,7 @@ export interface FlowStore {
   nodes: FlowNode[];
   edges: FlowEdge[];
   selectedNodeId: string | null;
+  selectedEdgeId: string | null;
   publishVersion: number;
   isPublished: boolean;
   flowName: string;
@@ -17,6 +18,8 @@ export interface FlowStore {
   updateNodeData: (id: string, data: Partial<FlowNodeData>) => void;
   deleteNode: (id: string) => void;
   setSelectedNodeId: (id: string | null) => void;
+  setSelectedEdgeId: (id: string | null) => void;
+  updateEdgeData: (id: string, data: Partial<FlowEdge['data']> & { label?: string; sourceHandle?: string | null }) => Promise<void>;
   updateNodePositions: (updates: Array<{ id: string; position: { x: number; y: number } }>) => void;
 
   addEdge: (edge: Omit<FlowEdge, 'id'>) => void;

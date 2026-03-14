@@ -95,14 +95,16 @@ export async function getEdgesBySource(sourceNodeId: string): Promise<DbEdge[]> 
 
 export async function createEdge(data: CreateEdgeBody): Promise<DbEdge> {
   const { rows } = await pool.query<DbEdge>(
-    `INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-     VALUES ($1,$2,$3,$4,$5) RETURNING *`,
+    `INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
+     VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
     [
       data.source_node_id,
       data.target_node_id,
       data.label ?? null,
       data.conditions != null ? JSON.stringify(data.conditions) : null,
       data.priority ?? 0,
+      data.source_handle ?? null,
+      data.target_handle ?? null,
     ],
   );
   return rows[0];
@@ -121,6 +123,8 @@ export async function updateEdge(id: string, data: Partial<CreateEdgeBody>): Pro
   if ('priority' in data) { fields.push(`priority = $${idx++}`); values.push(data.priority); }
   if ('source_node_id' in data) { fields.push(`source_node_id = $${idx++}`); values.push(data.source_node_id); }
   if ('target_node_id' in data) { fields.push(`target_node_id = $${idx++}`); values.push(data.target_node_id); }
+  if ('source_handle' in data) { fields.push(`source_handle = $${idx++}`); values.push(data.source_handle ?? null); }
+  if ('target_handle' in data) { fields.push(`target_handle = $${idx++}`); values.push(data.target_handle ?? null); }
 
   if (fields.length === 0) {
     const { rows } = await pool.query<DbEdge>('SELECT * FROM edges WHERE id = $1', [id]);

@@ -10,7 +10,6 @@ const DEFAULT_POSITIONS: Record<NodeType, { x: number; y: number }> = {
   question: { x: 200, y: 300 },
   info: { x: 400, y: 300 },
   offer: { x: 600, y: 300 },
-  result: { x: 600, y: 500 },
   conditional: { x: 400, y: 500 },
   delay: { x: 200, y: 500 },
 };
@@ -24,6 +23,7 @@ export const useFlowStore = create<FlowStore>((set, get) => ({
   nodes: [],
   edges: [],
   selectedNodeId: null,
+  selectedEdgeId: null,
   publishVersion: 1,
   isPublished: true,
   flowName: 'Wellness Onboarding v3',
@@ -102,8 +102,6 @@ export const useFlowStore = create<FlowStore>((set, get) => ({
       nodes: s.nodes.map(n => n.id === id ? { ...n, data: { ...n.data, ...data } } : n),
     }));
 
-    // Sync to backend (debouncing would be better here for a production app,
-    // but we'll do immediate sync for this implementation)
     const node = get().nodes.find(n => n.id === id);
     if (node) {
       try {
@@ -111,6 +109,7 @@ export const useFlowStore = create<FlowStore>((set, get) => ({
       } catch (error) {
         console.error('Failed to sync node update', error);
       }
+
     }
   },
 
@@ -131,7 +130,28 @@ export const useFlowStore = create<FlowStore>((set, get) => ({
     }
   },
 
-  setSelectedNodeId(id) { set({ selectedNodeId: id }); },
+  setSelectedNodeId(id) { set({ selectedNodeId: id, selectedEdgeId: null }); },
+  setSelectedEdgeId(id) { set({ selectedEdgeId: id, selectedNodeId: null }); },
+
+  async updateEdgeData(id, patch) {
+    set(s => ({
+      edges: s.edges.map(e => e.id === id ? {
+        ...e,
+        label: 'label' in patch ? (patch as any).label : e.label,
+        sourceHandle: 'sourceHandle' in patch ? (patch as any).sourceHandle : e.sourceHandle,
+        data: { ...e.data, ...patch },
+      } : e),
+    }));
+    const edge = get().edges.find(e => e.id === id);
+    if (edge) {
+      try {
+        const { mapFrontendEdgeToBackend } = await import('@/services/transformers');
+        await apiService.updateEdge(id, mapFrontendEdgeToBackend(edge));
+      } catch (err) {
+        console.error('Failed to sync edge update', err);
+      }
+    }
+  },
 
   updateNodePositions(updates) {
     set(s => ({

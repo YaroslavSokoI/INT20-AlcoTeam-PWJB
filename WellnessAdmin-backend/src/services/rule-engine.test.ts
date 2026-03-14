@@ -106,6 +106,8 @@ describe('resolveNextEdge', () => {
     target_node_id: `target-${id}`,
     conditions,
     priority,
+    source_handle: null,
+    target_handle: null,
     created_at: '',
   });
 

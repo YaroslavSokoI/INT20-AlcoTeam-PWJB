@@ -15,7 +15,7 @@ export function mapFrontendNodeToBackend(node: FlowNode): Partial<BackendNode> {
         options: isQuestion && node.data.options
             ? node.data.options.map(o => ({ value: o.value, label: o.label }))
             : undefined,
-        attribute_key: node.data.attribute_key as string || undefined,
+        attribute_key: (node.data.attribute_key as string) || undefined,
         pos_x: Math.round(node.position.x),
         pos_y: Math.round(node.position.y),
         is_start: !!node.data.is_start,
@@ -37,5 +37,7 @@ export function mapFrontendEdgeToBackend(edge: FlowEdge): Partial<BackendEdge> {
         label: edge.label || '',
         conditions,
         priority: parseInt(((edge.data as any)?.priority as string) || '0', 10),
+        source_handle: edge.sourceHandle ?? null,
+        target_handle: edge.targetHandle ?? null,
     };
 }

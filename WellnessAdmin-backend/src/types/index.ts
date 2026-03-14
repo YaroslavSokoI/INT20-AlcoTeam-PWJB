@@ -1,4 +1,4 @@
-export type NodeType = 'question' | 'info' | 'offer' | 'result' | 'conditional' | 'delay';
+export type NodeType = 'question' | 'info' | 'offer' | 'conditional' | 'delay';
 export type QuestionType = 'single_choice' | 'multi_choice' | 'text_input' | 'number_input';
 
 export interface NodeOption {
@@ -29,6 +29,8 @@ export interface DbEdge {
   label?: string;
   conditions: Condition | null;
   priority: number;
+  source_handle: string | null;
+  target_handle: string | null;
   created_at: string;
 }
 
@@ -82,6 +84,8 @@ export interface CreateEdgeBody {
   label?: string;
   conditions?: Condition | null;
   priority?: number;
+  source_handle?: string | null;
+  target_handle?: string | null;
 }
 
 export interface CreateOfferBody {

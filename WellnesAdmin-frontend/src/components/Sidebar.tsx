@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Plus, HelpCircle, Info, Tag, CheckSquare, GitBranch, Clock, ChevronLeft } from 'lucide-react';
+import { HelpCircle, Info, Tag, GitBranch, Clock, ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useFlowStore } from '@/store/flowStore';
 import { NODE_TYPE_META } from '@/types';
@@ -10,7 +10,6 @@ const NODE_ICONS: Record<NodeType, React.ReactNode> = {
   question:    <HelpCircle className="w-4 h-4" />,
   info:        <Info className="w-4 h-4" />,
   offer:       <Tag className="w-4 h-4" />,
-  result:      <CheckSquare className="w-4 h-4" />,
   conditional: <GitBranch className="w-4 h-4" />,
   delay:       <Clock className="w-4 h-4" />,
 };
@@ -28,7 +27,7 @@ export function Sidebar({ onClose }: SidebarProps) {
     e.dataTransfer.effectAllowed = 'move';
   }, []);
 
-  const nodeTypes: NodeType[] = ['question', 'info', 'offer', 'result', 'conditional', 'delay'];
+  const nodeTypes: NodeType[] = ['question', 'info', 'offer', 'conditional', 'delay'];
 
   return (
     <aside className={cn(
@@ -113,7 +112,6 @@ function NodeListItem({ node, isSelected, onSelect }: { node: FlowNode; isSelect
     if (node.data.nodeType === 'question') return `${node.data.options?.length ?? 0} options`;
     if (node.data.nodeType === 'info') return 'info page';
     if (node.data.nodeType === 'offer') return 'offer';
-    if (node.data.nodeType === 'result') return 'result';
     if (node.data.nodeType === 'conditional') return 'branch';
     return `${node.data.delaySeconds ?? 0}s delay`;
   };

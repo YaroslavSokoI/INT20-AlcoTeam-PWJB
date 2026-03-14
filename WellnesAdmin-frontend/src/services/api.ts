@@ -49,6 +49,8 @@ export interface BackendEdge {
     label?: string;
     conditions?: any; // The complex condition object from BE
     priority: number;
+    source_handle?: string | null;
+    target_handle?: string | null;
     created_at?: string;
 }
 
@@ -86,7 +88,7 @@ export interface BackendAdmin {
 // For now, we adapt BE nodes with UI fallbacks based on type/metadata.
 export function mapBackendNodeToFrontend(beNode: BackendNode): FlowNode {
     let uiType: NodeType = beNode.type as NodeType;
-    if (!['question', 'info', 'offer', 'result', 'conditional', 'delay'].includes(uiType)) {
+    if (!['question', 'info', 'offer', 'conditional', 'delay'].includes(uiType)) {
         uiType = 'info';
     }
 
@@ -103,7 +105,6 @@ export function mapBackendNodeToFrontend(beNode: BackendNode): FlowNode {
             options: (beNode.options || []).map((o, idx) => ({ id: `opt-${idx}`, value: o.value, label: o.label })),
             attribute_key: beNode.attribute_key,
             is_start: beNode.is_start,
-            // Default fallbacks for other UI fields
             offerTitle: beNode.title,
             offerDescription: beNode.description,
         },
@@ -115,8 +116,13 @@ export function mapBackendEdgeToFrontend(beEdge: BackendEdge): FlowEdge {
         id: beEdge.id,
         source: beEdge.source_node_id,
         target: beEdge.target_node_id,
-        label: beEdge.label || undefined,
-        data: { condition: beEdge.conditions ? JSON.stringify(beEdge.conditions) : '' },
+        sourceHandle: beEdge.source_handle ?? null,
+        targetHandle: beEdge.target_handle ?? null,
+        data: {
+            label: beEdge.label || '',
+            condition: beEdge.conditions ? JSON.stringify(beEdge.conditions) : '',
+            priority: String(beEdge.priority ?? 0),
+        },
     };
 }
 
@@ -130,8 +136,12 @@ export const apiService = {
     // Graph (DAG)
     async getGraph() {
         const data = await fetchAdmin<{ nodes: BackendNode[]; edges: BackendEdge[] }>('/graph');
+        const nodes = data.nodes.map(n => {
+            const node = mapBackendNodeToFrontend(n);
+            return node;
+        });
         return {
-            nodes: data.nodes.map(n => mapBackendNodeToFrontend(n)),
+            nodes,
             edges: data.edges.map(e => mapBackendEdgeToFrontend(e)),
         };
     },

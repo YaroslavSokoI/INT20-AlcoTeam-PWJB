@@ -46,7 +46,7 @@ describe('evaluate', () => {
 describe('resolveNextEdge', () => {
   const makeEdge = (id: string, priority: number, conditions: Condition | null): DbEdge => ({
     id, source_node_id: 'src', target_node_id: `target-${id}`,
-    conditions, priority, created_at: '',
+    conditions, priority, source_handle: null, target_handle: null, created_at: '',
   });
 
   test('null condition = default always matches', () => {
