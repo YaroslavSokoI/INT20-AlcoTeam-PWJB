@@ -66,6 +66,15 @@ export interface BackendOffer {
     is_addon: boolean;
 }
 
+export interface BackendAdmin {
+    id: string;
+    login: string;
+    role: string;
+    status: 'active' | 'suspended';
+    created_at: string;
+    last_login?: string;
+}
+
 /**
  * ──────────────────────────────────────────────────────────────────
  * TRANSFORMERS (BE <-> Frontend React Flow Graph representation)
@@ -191,5 +200,39 @@ export const apiService = {
 
     async deleteOffer(id: string) {
         return fetchAdmin<void>(`/offers/${id}`, { method: 'DELETE' });
+    },
+
+    // Admins
+    async getAdmins() {
+        return fetchAdmin<BackendAdmin[]>('/admins');
+    },
+
+    async createAdmin(data: { login: string; password?: string }) {
+        return fetchAdmin<BackendAdmin>('/admins', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    },
+
+    async updateAdmin(id: string, data: { login?: string; password?: string }) {
+        return fetchAdmin<BackendAdmin>(`/admins/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    },
+
+    async deleteAdmin(id: string) {
+        return fetchAdmin<void>(`/admins/${id}`, { method: 'DELETE' });
+    },
+
+    async toggleAdminStatus(id: string) {
+        return fetchAdmin<BackendAdmin>(`/admins/${id}/toggle-status`, { method: 'PATCH' });
+    },
+
+    async login(data: { login: string; password?: string }) {
+        return fetchAdmin<BackendAdmin>('/admins/login', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
     },
 };

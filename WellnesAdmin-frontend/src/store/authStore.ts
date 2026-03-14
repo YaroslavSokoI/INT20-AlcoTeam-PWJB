@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { apiService } from '@/services/api';
 import type { AuthState, User } from '@/types';
 
 export const useAuthStore = create<AuthState>()(
@@ -9,18 +10,21 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       login: async (login, password) => {
-        // Simulation of a basic admin authentication
-        if (login === 'admin' && password === 'admin') {
-          const mockUser: User = {
-            id: 'admin-1',
-            login: 'admin',
+        try {
+          const admin = await apiService.login({ login, password });
+          
+          const user: User = {
+            id: admin.id,
+            login: admin.login,
             role: 'admin',
           };
           
-          set({ user: mockUser, isAuthenticated: true });
+          set({ user, isAuthenticated: true });
           return true;
+        } catch (error) {
+          console.error('Login failed:', error);
+          return false;
         }
-        return false;
       },
 
       logout: () => {

@@ -8,6 +8,8 @@ export interface Admin {
 
 export interface AdminsState {
   admins: Admin[];
+  isLoading: boolean;
+  fetchAdmins: () => Promise<void>;
   addAdmin: (login: string, password: string) => Promise<Admin>;
   editAdmin: (id: string, login: string, password: string) => Promise<void>;
   removeAdmin: (id: string) => void;

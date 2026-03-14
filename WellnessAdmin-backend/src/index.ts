@@ -8,6 +8,11 @@ import nodesRouter from './routes/nodes.routes.js';
 import edgesRouter from './routes/edges.routes.js';
 import offersRouter from './routes/offers.routes.js';
 import contentRouter from './routes/content.routes.js';
+import adminsRouter from './routes/admins.routes.js';
+import { ensureDefaultAdmin } from './services/admin.service.js';
+
+// Initialize core data
+ensureDefaultAdmin();
 
 const app = express();
 const PORT = process.env.PORT ?? 3001;
@@ -25,6 +30,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
 app.use('/api/admin/nodes', nodesRouter);
 app.use('/api/admin/edges', edgesRouter);
 app.use('/api/admin/offers', offersRouter);
+app.use('/api/admin/admins', adminsRouter);
 
 // Admin graph convenience endpoint
 app.get('/api/admin/graph', async (_req, res) => {

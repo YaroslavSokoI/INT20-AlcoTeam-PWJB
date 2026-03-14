@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Pencil, Trash2, Ban, CheckCircle, Users, Clock, MoreVertical } from 'lucide-react';
+import { Plus, Pencil, Trash2, Ban, CheckCircle, Users, Clock, MoreVertical, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useAdminsStore } from '@/store/adminsStore';
 import { useAuthStore } from '@/store/authStore';
@@ -8,11 +8,15 @@ import { AdminModal } from '@/components/NewAdminModal';
 import type { Admin } from '@/types';
 
 export function AdminsPage() {
-  const { admins, removeAdmin, toggleAdminStatus } = useAdminsStore();
+  const { admins, isLoading, fetchAdmins, removeAdmin, toggleAdminStatus } = useAdminsStore();
   const { user } = useAuthStore();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Admin | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchAdmins();
+  }, [fetchAdmins]);
 
   const activeCount = admins.filter(a => a.status === 'active').length;
 
@@ -39,8 +43,14 @@ export function AdminsPage() {
         <StatCard label="Active" value={activeCount} icon={<CheckCircle className="w-4 h-4" />} color="bg-emerald-50 text-emerald-600" />
       </div>
 
-      {/* Admin Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {isLoading && admins.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <Loader2 className="w-10 h-10 text-[var(--color-text-muted)] animate-spin" />
+          <p className="text-sm font-bold text-[var(--color-text-muted)] uppercase tracking-widest">Loading administrators...</p>
+        </div>
+      ) : (
+        /* Admin Cards Grid */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <AnimatePresence initial={false} mode="popLayout">
           {admins.map((admin, i) => {
             const isSelf = admin.login === user?.login;
@@ -133,6 +143,7 @@ export function AdminsPage() {
           })}
         </AnimatePresence>
       </div>
+      )}
 
       {/* Create Modal */}
       <AdminModal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} />
