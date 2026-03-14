@@ -18,7 +18,6 @@ interface PreviewState {
   completed: boolean;
 }
 
-// Resolve through conditional/delay chain to the first interactive node (or null = completed)
 function resolveToInteractiveNode(
   nodes: FlowNode[],
   edges: { source: string; target: string }[],
@@ -40,7 +39,27 @@ function resolveToInteractiveNode(
   return null;
 }
 
-// Compute start node: is_start flag, else no incoming edges, else first node
+const INTERACTIVE_TYPES = new Set(['question', 'info', 'offer']);
+
+function countForwardSteps(
+  nodes: FlowNode[],
+  edges: { source: string; target: string }[],
+  fromNodeId: string,
+): number {
+  let count = 0;
+  let currentId: string | null = fromNodeId;
+  const seen = new Set<string>();
+  while (currentId && !seen.has(currentId)) {
+    seen.add(currentId);
+    const node = nodes.find(n => n.id === currentId);
+    if (!node) break;
+    if (INTERACTIVE_TYPES.has(node.data?.nodeType)) count++;
+    const nextEdge = edges.find(e => e.source === currentId);
+    currentId = nextEdge?.target ?? null;
+  }
+  return count;
+}
+
 function getStartNodeId(nodes: FlowNode[], edges: { target: string }[]): string {
   const withIncoming = new Set(edges.map(e => e.target));
   const byStart = nodes.find(n => (n.data as { is_start?: boolean })?.is_start === true);
@@ -159,8 +178,14 @@ export function PreviewModal({ open, onClose }: PreviewModalProps) {
     setTimeout(restart, 300);
   };
 
-  const totalSteps = nodes.filter(n => n.data.nodeType === 'question' || n.data.nodeType === 'info').length;
-  const currentStep = state.history.length + 1;
+  const currentStep =
+    state.history.filter(id => {
+      const n = nodes.find(nd => nd.id === id);
+      return n && INTERACTIVE_TYPES.has(n.data.nodeType);
+    }).length + 1;
+  const nextEdgeTarget = edges.find(e => e.source === state.currentNodeId)?.target;
+  const forwardSteps = nextEdgeTarget ? countForwardSteps(nodes, edges, nextEdgeTarget) : 0;
+  const totalSteps = currentStep + forwardSteps;
   const progress = Math.min((currentStep / Math.max(totalSteps, 1)) * 100, 100);
 
   return (
