@@ -10,7 +10,7 @@ export function WelcomeScreen({ onStart }: Props) {
 
   return (
     <motion.div
-      className="flex-1 flex flex-col items-center justify-center gap-6 p-8 text-center"
+      className="flex-1 flex flex-col items-center justify-center gap-4 p-8 pt-0 text-center"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
@@ -30,7 +30,7 @@ export function WelcomeScreen({ onStart }: Props) {
         </p>
       </div>
 
-      <div className="flex flex-col gap-2 text-left w-full max-w-xs mt-2">
+      <div className="flex flex-col gap-1 text-left w-full max-w-xs mt-2">
         {[
           { icon: '1', text: t('welcome_step1', 'Tell us about your goals') },
           { icon: '2', text: t('welcome_step2', 'Share your preferences') },

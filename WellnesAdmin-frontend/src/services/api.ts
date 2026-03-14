@@ -235,4 +235,34 @@ export const apiService = {
             body: JSON.stringify(data),
         });
     },
+
+    // Analytics
+    async getAnalyticsStats(range: string = '30D') {
+        return fetchAdmin<AnalyticsStats>(`/analytics/stats?range=${range}`);
+    },
 };
+
+export interface DropoffItem {
+    step: number;
+    title: string;
+    attributeKey: string | null;
+    type: string;
+    count: number;
+}
+
+export interface ChartItem {
+    label: string;
+    count: number;
+}
+
+export interface AnalyticsStats {
+    totalSessions: number;
+    completedSessions: number;
+    completionRate: number;
+    topGoals: ChartItem[];
+    weeklyTrend: { week: string; rate: number }[];
+    dropoffs: DropoffItem[];
+    devices: ChartItem[];
+    sources: ChartItem[];
+    languages: ChartItem[];
+}

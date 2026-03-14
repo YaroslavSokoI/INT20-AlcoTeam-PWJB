@@ -35,9 +35,38 @@ export interface SubmitAnswerBody {
   value: unknown;
 }
 
+function detectInApp(ua: string): string | null {
+  if (ua.includes('Instagram')) return 'instagram';
+  if (ua.includes('FBAN') || ua.includes('FBAV')) return 'facebook';
+  if (ua.includes('TikTok') || ua.includes('BytedanceWebview')) return 'tiktok';
+  if (ua.includes('Snapchat')) return 'snapchat';
+  if (ua.includes('Twitter') || ua.includes('TwitterAndroid')) return 'twitter';
+  if (ua.includes('LinkedInApp')) return 'linkedin';
+  if (ua.includes('Telegram')) return 'telegram';
+  return null;
+}
+
+function collectMetadata() {
+  const ua = navigator.userAgent;
+  const params = new URLSearchParams(window.location.search);
+
+  return {
+    language: navigator.language || null,
+    referrer: document.referrer || null,
+    utm_source: params.get('utm_source'),
+    utm_medium: params.get('utm_medium'),
+    utm_campaign: params.get('utm_campaign'),
+    in_app: detectInApp(ua),
+    user_agent: ua,
+  };
+}
+
 export const api = {
   createSession(): Promise<StartSessionResponse> {
-    return request('/user/sessions', { method: 'POST' });
+    return request('/user/sessions', {
+      method: 'POST',
+      body: JSON.stringify({ metadata: collectMetadata() }),
+    });
   },
 
   submitAnswer(sessionId: string, body: SubmitAnswerBody): Promise<AnswerResponse> {

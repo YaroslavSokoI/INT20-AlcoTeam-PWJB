@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import UAParser from 'ua-parser-js';
 import pool from '../db/client.js';
 import { resolveNextEdge } from '../services/rule-engine.js';
 import { resolveOffers } from '../services/offer.service.js';
@@ -8,7 +9,7 @@ const router = Router();
 
 // ---- POST /api/user/sessions ----------------------------
 // Create a new quiz session and return the first (start) node.
-router.post('/sessions', async (_req: Request, res: Response) => {
+router.post('/sessions', async (req: Request, res: Response) => {
   try {
     // Find the start node
     const { rows: startNodes } = await pool.query<DbNode>(
@@ -24,10 +25,43 @@ router.post('/sessions', async (_req: Request, res: Response) => {
     );
     const totalNodes = parseInt(countRows[0].count, 10);
 
+    // Parse user metadata
+    const userAgent = req.headers['user-agent'] || '';
+    const ua = new UAParser(userAgent);
+    const meta = req.body?.metadata || {};
+
+    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim()
+      || req.socket.remoteAddress
+      || null;
+
+    const osInfo = ua.getOS();
+    const browserInfo = ua.getBrowser();
+    const deviceInfo = ua.getDevice();
+
+    const os = osInfo.name ? `${osInfo.name} ${osInfo.version || ''}`.trim() : null;
+    const browser = browserInfo.name ? `${browserInfo.name} ${browserInfo.version || ''}`.trim() : null;
+    const deviceType = deviceInfo.type || (meta.in_app ? 'mobile' : 'desktop');
+
     const { rows } = await pool.query<Session>(
-      `INSERT INTO sessions (current_node_id, attributes)
-       VALUES ($1, '{}') RETURNING *`,
-      [startNode.id],
+      `INSERT INTO sessions (
+        current_node_id, attributes,
+        ip, os, browser, device_type, language, referrer,
+        utm_source, utm_medium, utm_campaign, in_app
+      ) VALUES ($1, '{}', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING *`,
+      [
+        startNode.id,
+        ip,
+        os,
+        browser,
+        deviceType,
+        meta.language || null,
+        meta.referrer || req.headers['referer'] || null,
+        meta.utm_source || null,
+        meta.utm_medium || null,
+        meta.utm_campaign || null,
+        meta.in_app || null,
+      ],
     );
     const session = rows[0];
 

@@ -9,6 +9,7 @@ services:
       - ./db/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql
       - ./db/002_seed.sql:/docker-entrypoint-initdb.d/002_seed.sql
       - ./db/003_expand_node_types.sql:/docker-entrypoint-initdb.d/003_expand_node_types.sql
+      - ./db/003_session_metadata.sql:/docker-entrypoint-initdb.d/004_session_metadata.sql
       - pgdata:/var/lib/postgresql/data
     ports:
       - "5432:5432"
