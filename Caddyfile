@@ -3,15 +3,16 @@
         uri strip_prefix /admin
         reverse_proxy admin-backend:3001
     }
-    @admin_exact path /admin
-    handle @admin_exact {
-        redir /admin/ 301
-    }
-    handle /admin/* {
+    @admin path /admin /admin/*
+    handle @admin {
         uri strip_prefix /admin
         reverse_proxy admin-frontend:80
     }
     handle /api/* {
+        reverse_proxy app-backend:3002
+    }
+    @apidocs path /api-docs /api-docs/*
+    handle @apidocs {
         reverse_proxy app-backend:3002
     }
     handle {

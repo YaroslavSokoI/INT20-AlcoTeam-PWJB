@@ -17,12 +17,6 @@ export function InfoStep({ node, onContinue }: Props) {
       exit={{ opacity: 0, x: -40 }}
       transition={{ duration: 0.25, ease: 'easeOut' }}
     >
-      {node.image_url && (
-        <div className="w-full rounded-2xl overflow-hidden aspect-video bg-warm-100">
-          <img src={node.image_url} alt="" className="w-full h-full object-cover" />
-        </div>
-      )}
-
       <div className="space-y-3 max-w-md">
         <h2 className="text-[24px] lg:text-[28px] font-bold leading-tight text-text-primary">{node.title}</h2>
         {node.description && (

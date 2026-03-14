@@ -17,7 +17,7 @@ export function QuestionStep({ node, onAnswer }: Props) {
   const [sliderValue, setSliderValue] = useState(50);
 
   const handleSubmit = () => {
-    switch (node.answer_type) {
+    switch (node.question_type) {
       case 'single_choice':
         if (selected) onAnswer(selected);
         break;
@@ -27,7 +27,7 @@ export function QuestionStep({ node, onAnswer }: Props) {
       case 'text_input':
         if (textValue.trim()) onAnswer(textValue.trim());
         break;
-      case 'slider':
+      case 'number_input':
         onAnswer(sliderValue);
         break;
     }
@@ -63,12 +63,6 @@ export function QuestionStep({ node, onAnswer }: Props) {
       exit={{ opacity: 0, x: -40 }}
       transition={{ duration: 0.25, ease: 'easeOut' }}
     >
-      {node.image_url && (
-        <div className="w-full rounded-2xl overflow-hidden aspect-video bg-warm-100">
-          <img src={node.image_url} alt="" className="w-full h-full object-cover" />
-        </div>
-      )}
-
       <div className="space-y-2">
         <h2 className="text-[22px] lg:text-[26px] font-bold leading-tight text-text-primary tracking-[-0.02em]">
           {node.title}
@@ -79,7 +73,7 @@ export function QuestionStep({ node, onAnswer }: Props) {
       </div>
 
       <div className="flex flex-col gap-2.5 flex-1 mt-1">
-        {node.answer_type === 'single_choice' && node.options.map(opt => (
+        {node.question_type === 'single_choice' && node.options?.map(opt => (
           <button
             key={opt.value}
             className={`flex items-center gap-3.5 px-4 py-3.5 lg:px-5 lg:py-4 rounded-2xl text-[15px] lg:text-base font-medium cursor-pointer text-left w-full transition-all border
@@ -90,7 +84,6 @@ export function QuestionStep({ node, onAnswer }: Props) {
             onClick={() => handleSingleSelect(opt.value)}
           >
             {renderIcon(opt.icon, selected === opt.value)}
-            {opt.image_url && <img src={opt.image_url} alt="" className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl object-cover shrink-0" />}
             <span className="flex-1 text-text-primary">{opt.label}</span>
             <div className={`w-[22px] h-[22px] rounded-full shrink-0 flex items-center justify-center transition-all
               ${selected === opt.value ? 'bg-[#D4895A] border-none' : 'border-[1.5px] border-[#D4895A]/50 bg-transparent'}`}>
@@ -101,7 +94,7 @@ export function QuestionStep({ node, onAnswer }: Props) {
           </button>
         ))}
 
-        {node.answer_type === 'single_choice' && (
+        {node.question_type === 'single_choice' && (
           <button
             className="w-full py-3.5 lg:py-4 bg-[#3D2B1F] text-[#F0E4D8] rounded-[24px] text-[15px] lg:text-base font-semibold cursor-pointer mt-auto hover:opacity-90 transition-opacity disabled:opacity-35 disabled:cursor-not-allowed shadow-[0_4px_12px_rgba(61,43,31,0.15)] tracking-wide"
             onClick={handleSubmit}
@@ -111,9 +104,9 @@ export function QuestionStep({ node, onAnswer }: Props) {
           </button>
         )}
 
-        {node.answer_type === 'multi_choice' && (
+        {node.question_type === 'multi_choice' && (
           <>
-            {node.options.map(opt => {
+            {node.options?.map(opt => {
               const isSelected = Array.isArray(selected) && selected.includes(opt.value);
               return (
                 <button
@@ -146,13 +139,13 @@ export function QuestionStep({ node, onAnswer }: Props) {
           </>
         )}
 
-        {node.answer_type === 'text_input' && (
+        {node.question_type === 'text_input' && (
           <div className="flex flex-col gap-4 mt-2">
             <input
               type="text"
               value={textValue}
               onChange={e => setTextValue(e.target.value)}
-              placeholder={(node.metadata?.placeholder as string) || 'Type your answer...'}
+              placeholder="Type your answer..."
               className="w-full px-5 py-4 bg-warm-50 border border-border rounded-2xl text-text-primary text-base outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all placeholder:text-text-muted"
             />
             <button
@@ -165,13 +158,13 @@ export function QuestionStep({ node, onAnswer }: Props) {
           </div>
         )}
 
-        {node.answer_type === 'slider' && (
+        {node.question_type === 'number_input' && (
           <div className="flex flex-col items-center gap-5 mt-4">
             <span className="text-4xl font-bold text-brand">{sliderValue}</span>
             <input
               type="range"
-              min={(node.metadata?.min as number) || 0}
-              max={(node.metadata?.max as number) || 100}
+              min={0}
+              max={100}
               value={sliderValue}
               onChange={e => setSliderValue(Number(e.target.value))}
               className="w-full h-2 appearance-none bg-warm-200 rounded-full outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-7 [&::-webkit-slider-thumb]:h-7 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-brand [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md"

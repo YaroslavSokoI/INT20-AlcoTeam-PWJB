@@ -1,60 +1,43 @@
-// Node types matching backend schema
-export type NodeType = 'question' | 'info' | 'start' | 'end';
-export type AnswerType = 'single_choice' | 'multi_choice' | 'slider' | 'text_input' | 'none';
+// Types matching backend schema
+
+export type NodeType = 'question' | 'info';
+export type QuestionType = 'single_choice' | 'multi_choice' | 'text_input' | 'number_input';
 
 export interface NodeOption {
   value: string;
   label: string;
-  image_url?: string;
   icon?: string;
 }
 
 export interface QuizNode {
-  id: number;
-  graph_id: number;
-  node_type: NodeType;
-  slug: string | null;
-  title: string | null;
-  description: string | null;
-  image_url: string | null;
-  answer_type: AnswerType;
-  options: NodeOption[];
-  metadata: Record<string, unknown>;
+  id: string;
+  type: NodeType;
+  title: string;
+  description?: string;
+  question_type?: QuestionType;
+  options?: NodeOption[];
+  attribute_key?: string;
+  pos_x: number;
+  pos_y: number;
+  is_start: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Offer {
-  id: number;
-  slug: string;
-  name: string;
-  description: string;
-  image_url: string | null;
-  plan_details: {
-    duration: string;
-    format: string;
-    session_length: string;
-    frequency?: string;
-    description: string;
-  };
-  kit_details: {
-    name: string;
-    items: string[];
-  };
-}
-
-export interface QuizSession {
   id: string;
-  graph_id: number;
-  current_node: QuizNode;
-  answers: Record<string, unknown>;
-  history: number[];
-  status: 'in_progress' | 'completed';
-  progress: number;
-  current_step: number;
-  total_steps: number;
+  name: string;
+  slug: string;
+  description?: string;
+  digital_plan?: string;
+  physical_kit?: string;
+  why_text?: string;
+  cta_text: string;
+  priority: number;
+  is_addon: boolean;
 }
 
-export interface QuizResult {
-  offers: Offer[];
-  answers: Record<string, unknown>;
-  summary: string;
+export interface OfferResult {
+  primary: Offer[];
+  addon: Offer | null;
 }
