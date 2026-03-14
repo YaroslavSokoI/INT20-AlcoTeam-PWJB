@@ -4,9 +4,9 @@ import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell
 } from 'recharts';
-import { 
-  Users, TrendingUp, Target, AlertTriangle, ArrowUpRight, 
-  Calendar, Smartphone, CheckCircle, ChevronDown, Download, Filter 
+import {
+  Users, TrendingUp, Target, AlertTriangle, ArrowUpRight,
+  Calendar, Smartphone, CheckCircle, ChevronDown, Download, Filter
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useIsMobile } from '@/hooks/useResponsive';
@@ -100,10 +100,10 @@ export function AnalyticsPage() {
           <h1 className="text-2xl font-black text-[var(--color-text-primary)]">Analytics</h1>
           <p className="text-sm font-bold text-[var(--color-text-muted)] mt-0.5">Real-time performance metrics</p>
         </div>
-        
+
         <div className="flex flex-wrap items-center gap-2">
           {/* Platform Filter Dropdown */}
-          <FilterDropdown 
+          <FilterDropdown
             label="Platform"
             value={platform}
             options={[
@@ -113,11 +113,11 @@ export function AnalyticsPage() {
               { value: 'Web', label: 'Web Browser' },
             ]}
             icon={<Smartphone className="w-3.5 h-3.5" />}
-            onChange={(v) => { setPlatform(v as Platform); handleRefresh(); }}
+            onChange={(v: string) => { setPlatform(v as Platform); handleRefresh(); }}
           />
 
           {/* Date Range Dropdown */}
-          <FilterDropdown 
+          <FilterDropdown
             label="Range"
             value={dateRange}
             options={[
@@ -127,7 +127,7 @@ export function AnalyticsPage() {
               { value: 'ALL', label: 'Lifetime' },
             ]}
             icon={<Calendar className="w-3.5 h-3.5" />}
-            onChange={(v) => { setDateRange(v as DateRange); handleRefresh(); }}
+            onChange={(v: string) => { setDateRange(v as DateRange); handleRefresh(); }}
           />
 
           <button className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] shadow-sm hover:bg-gray-50 active:scale-95 transition-all">
@@ -180,9 +180,9 @@ export function AnalyticsPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false} opacity={0.5} />
                   <XAxis type="number" hide />
                   <YAxis dataKey="label" type="category" tick={{ fontSize: 10, fill: 'var(--color-text-primary)', fontWeight: 700 }} width={85} axisLine={false} tickLine={false} />
-                  <Tooltip 
-                    cursor={{ fill: 'rgba(0,0,0,0.03)' }} 
-                    contentStyle={{ borderRadius: 16, border: '1px solid var(--color-border)', fontSize: 12, fontWeight: 800 }} 
+                  <Tooltip
+                    cursor={{ fill: 'rgba(0,0,0,0.03)' }}
+                    contentStyle={{ borderRadius: 16, border: '1px solid var(--color-border)', fontSize: 12, fontWeight: 800 }}
                   />
                   <Bar dataKey="count" radius={[0, 8, 8, 0]} maxBarSize={28}>
                     {data.topAnswers.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} opacity={0.8} />)}
@@ -234,7 +234,7 @@ function FilterDropdown({ label, value, options, icon, onChange }: any) {
 
   return (
     <div className="relative">
-      <button 
+      <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-white text-xs font-black text-[var(--color-text-primary)] shadow-sm hover:border-black/20 active:scale-95 transition-all"
       >
@@ -294,7 +294,7 @@ function KpiCard({ label, value, change, icon, color }: any) {
         <p className="text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{label}</p>
       </div>
       {/* Decorative gradient blob */}
-      <div 
+      <div
         className="absolute -right-4 -bottom-4 w-24 h-24 rounded-full blur-3xl opacity-10 transition-opacity group-hover:opacity-20 pointer-events-none"
         style={{ background: color }}
       />

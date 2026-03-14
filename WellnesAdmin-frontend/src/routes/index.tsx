@@ -9,9 +9,9 @@ export const router = createBrowserRouter([
     path: '/',
     element: <App />,
     children: [
-      { index: true,       element: <GraphEditorPage /> },
-      { path: 'offers',    element: <OffersPage /> },
+      { index: true, element: <GraphEditorPage /> },
+      { path: 'offers', element: <OffersPage /> },
       { path: 'analytics', element: <AnalyticsPage /> },
     ],
   },
-]);
+], { basename: '/admin' });
