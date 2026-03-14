@@ -11,7 +11,7 @@ import { useFlowStore } from '@/store/flowStore';
 import { useAuthStore } from '@/store/authStore';
 import { PreviewModal } from '@/components/PreviewModal';
 import { useIsMobile } from '@/hooks/useResponsive';
-import { LogOut, User } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 
 export function Topbar() {
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -31,7 +31,6 @@ export function Topbar() {
           {!isMobile && <span className="text-[10px] md:text-xs text-[var(--color-text-muted)] font-medium">Admin</span>}
         </div>
 
-        {/* Desktop Nav */}
         {!isMobile && (
           <nav className="flex items-center gap-1 flex-1">
             <TopbarTab to="/" icon={<GitGraph className="w-3.5 h-3.5" />} label="Graph Editor" end />
