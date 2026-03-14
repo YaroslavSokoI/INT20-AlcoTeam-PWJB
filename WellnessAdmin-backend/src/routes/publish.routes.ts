@@ -17,7 +17,6 @@ router.post('/', async (_req: Request, res: Response) => {
         published_info_nodes,
         published_offer_nodes,
         published_conditional_nodes,
-        published_delay_nodes,
         published_nodes,
         published_edges
       CASCADE
@@ -39,18 +38,13 @@ router.post('/', async (_req: Request, res: Response) => {
       SELECT node_id, title, content FROM info_nodes
     `);
     await client.query(`
-      INSERT INTO published_offer_nodes (node_id, title, description, cta_text, slug)
-      SELECT node_id, title, description, cta_text, slug FROM offer_nodes
+      INSERT INTO published_offer_nodes (node_id, title, description, cta_text, slug, digital_plan, physical_kit, why_text, conditions, priority)
+      SELECT node_id, title, description, cta_text, slug, digital_plan, physical_kit, why_text, conditions, priority FROM offer_nodes
     `);
     await client.query(`
       INSERT INTO published_conditional_nodes (node_id, title)
       SELECT node_id, title FROM conditional_nodes
     `);
-    await client.query(`
-      INSERT INTO published_delay_nodes (node_id, title, delay_seconds)
-      SELECT node_id, title, delay_seconds FROM delay_nodes
-    `);
-
     // Copy edges
     await client.query(`INSERT INTO published_edges SELECT * FROM edges`);
 

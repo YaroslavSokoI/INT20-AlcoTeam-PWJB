@@ -1,6 +1,7 @@
 import { useCallback, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Trash2, Plus, Save } from 'lucide-react';
+import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog';
 import { v4 as uuidv4 } from 'uuid';
 import { cn } from '@/lib/cn';
 import { useFlowStore, selectSelectedNode } from '@/store/flowStore';
@@ -93,6 +94,7 @@ interface NodeInspectorProps {
 
 function NodeInspector({ nodeId, initialData, onClose, isMobile }: NodeInspectorProps) {
   const [data, setData] = useState<FlowNodeData>({ ...initialData });
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const { updateNodeData, deleteNode } = useFlowStore();
 
   const update = (patch: Partial<FlowNodeData>) => setData(d => ({ ...d, ...patch }));
@@ -102,9 +104,8 @@ function NodeInspector({ nodeId, initialData, onClose, isMobile }: NodeInspector
     if (isMobile) onClose();
   }, [nodeId, data, updateNodeData, isMobile, onClose]);
 
-  const handleDelete = useCallback(() => {
-    if (confirm('Delete this node?')) { deleteNode(nodeId); onClose(); }
-  }, [nodeId, deleteNode, onClose]);
+  const handleDelete = useCallback(() => setConfirmOpen(true), []);
+  const handleDeleteConfirm = useCallback(() => { setConfirmOpen(false); deleteNode(nodeId); onClose(); }, [nodeId, deleteNode, onClose]);
 
   const addOption = () => {
     const opts = data.options ?? [];
@@ -125,7 +126,7 @@ function NodeInspector({ nodeId, initialData, onClose, isMobile }: NodeInspector
         {/* Node Type */}
         <Section label="Node Type">
           <div className="grid grid-cols-3 gap-1 p-1 bg-[var(--color-bg)] rounded-xl border border-[var(--color-border)]">
-            {(['question', 'info', 'offer', 'conditional', 'delay'] as NodeType[]).map(t => (
+            {(['question', 'info', 'offer', 'conditional'] as NodeType[]).map(t => (
               <button
                 key={t}
                 onClick={() => update({ nodeType: t })}
@@ -219,25 +220,16 @@ function NodeInspector({ nodeId, initialData, onClose, isMobile }: NodeInspector
           </>
         )}
 
-        {/* Delay */}
-        {data.nodeType === 'delay' && (
-          <>
-            <Section label="Label">
-              <input value={data.label} onChange={e => update({ label: e.target.value })} className={inputCls} placeholder="Delay label..." />
-            </Section>
-            <Section label="Delay (seconds)">
-              <input
-                type="number" min={0}
-                value={data.delaySeconds ?? 0}
-                onChange={e => update({ delaySeconds: Number(e.target.value) })}
-                className={inputCls}
-              />
-            </Section>
-          </>
-        )}
       </div>
 
       <InspectorFooter onDelete={handleDelete} onSave={handleSave} isMobile={isMobile} />
+      <DeleteConfirmDialog
+        open={confirmOpen}
+        title="Delete node?"
+        description={`"${data.label}" and all its connected edges will be removed.`}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </>
   );
 }
@@ -252,6 +244,7 @@ interface EdgeInspectorProps {
 
 function EdgeInspector({ edge, onClose, isMobile }: EdgeInspectorProps) {
   const { updateEdgeData, deleteEdge, setSelectedEdgeId } = useFlowStore();
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [label, setLabel] = useState(edge.data?.label ?? '');
   const [priority, setPriority] = useState(edge.data?.priority ?? '0');
   const [sourceHandle, setSourceHandle] = useState<string>(edge.sourceHandle ?? '');
@@ -281,9 +274,8 @@ function EdgeInspector({ edge, onClose, isMobile }: EdgeInspectorProps) {
     if (isMobile) onClose();
   }, [edge.id, label, priority, conditionJson, sourceHandle, updateEdgeData, isMobile, onClose]);
 
-  const handleDelete = useCallback(() => {
-    if (confirm('Delete this edge?')) { deleteEdge(edge.id); setSelectedEdgeId(null); onClose(); }
-  }, [edge.id, deleteEdge, setSelectedEdgeId, onClose]);
+  const handleDelete = useCallback(() => setConfirmOpen(true), []);
+  const handleDeleteConfirm = useCallback(() => { setConfirmOpen(false); deleteEdge(edge.id); setSelectedEdgeId(null); onClose(); }, [edge.id, deleteEdge, setSelectedEdgeId, onClose]);
 
   return (
     <>
@@ -329,6 +321,13 @@ function EdgeInspector({ edge, onClose, isMobile }: EdgeInspectorProps) {
       </div>
 
       <InspectorFooter onDelete={handleDelete} onSave={handleSave} isMobile={isMobile} />
+      <DeleteConfirmDialog
+        open={confirmOpen}
+        title="Delete edge?"
+        description={label ? `Edge "${label}" will be removed.` : 'This connection will be removed.'}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </>
   );
 }

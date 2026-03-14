@@ -20,7 +20,6 @@ export function mapFrontendNodeToBackend(node: FlowNode): Partial<BackendNode> {
             : undefined,
         attribute_key: (node.data.attribute_key as string) || undefined,
         cta_text: isOffer ? ((node.data.ctaText as string) || undefined) : undefined,
-        delay_seconds: node.type === 'delay' ? ((node.data.delaySeconds as number) ?? 0) : undefined,
         pos_x: Math.round(node.position.x),
         pos_y: Math.round(node.position.y),
         is_start: !!node.data.is_start,

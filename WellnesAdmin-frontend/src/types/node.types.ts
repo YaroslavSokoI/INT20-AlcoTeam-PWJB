@@ -1,5 +1,5 @@
 // Node types
-export type NodeType = 'question' | 'info' | 'offer' | 'conditional' | 'delay';
+export type NodeType = 'question' | 'info' | 'offer' | 'conditional';
 export type AnswerType = 'single' | 'multi' | 'input';
 
 export interface AnswerOption {
@@ -25,7 +25,6 @@ export interface FlowNodeData {
   offerTitle?: string;
   offerDescription?: string;
   ctaText?: string;
-  delaySeconds?: number;
   badge?: string;
   [key: string]: unknown;
 }
@@ -67,5 +66,4 @@ export const NODE_TYPE_META: Record<NodeType, NodeTypeMeta> = {
   info:     { type: 'info',     label: 'Info Page', description: 'Motivational block',    color: '#2cb67d', bgColor: '#f0fdf4', textColor: '#166534' },
   offer:    { type: 'offer',    label: 'Offer',      description: 'Final proposal',        color: '#f5924a', bgColor: '#fff7ed', textColor: '#c2410c' },
   conditional: { type: 'conditional', label: 'Conditional', description: 'Branch logic',  color: '#ef4444', bgColor: '#fef2f2', textColor: '#b91c1c' },
-  delay:    { type: 'delay',    label: 'Delay',      description: 'Timed pause',           color: '#8e44ad', bgColor: '#faf5ff', textColor: '#6b21a8' },
 };

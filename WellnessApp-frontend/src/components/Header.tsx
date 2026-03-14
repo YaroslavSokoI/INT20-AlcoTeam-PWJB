@@ -47,7 +47,7 @@ export function Header({ onBack, canGoBack }: HeaderProps) {
       </div>
 
       <div className="flex-shrink-0 flex justify-center">
-        <img src={logo} alt="Wellness" className="h-12 w-auto lg:h-14" />
+        <img src={logo} alt="Wellness" className="h-14 w-auto lg:h-16" />
       </div>
 
       <div className="flex-1 flex justify-end min-w-0">

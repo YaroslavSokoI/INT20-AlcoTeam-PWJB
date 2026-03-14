@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ArrowLeft, Check, Smartphone, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -18,10 +18,62 @@ interface PreviewState {
   completed: boolean;
 }
 
+function resolveToInteractiveNode(
+  nodes: FlowNode[],
+  edges: { source: string; target: string }[],
+  fromNodeId: string,
+): string | null {
+  let currentId: string | null = fromNodeId;
+  const seen = new Set<string>();
+  while (currentId && !seen.has(currentId)) {
+    seen.add(currentId);
+    const node = nodes.find(n => n.id === currentId);
+    if (!node) return null;
+    const nodeType = node.data?.nodeType ?? node.type;
+    if (nodeType === 'question' || nodeType === 'info' || nodeType === 'offer') {
+      return currentId;
+    }
+    const nextEdge = edges.find(e => e.source === currentId);
+    currentId = nextEdge?.target ?? null;
+  }
+  return null;
+}
+
+const INTERACTIVE_TYPES = new Set(['question', 'info', 'offer']);
+
+function countForwardSteps(
+  nodes: FlowNode[],
+  edges: { source: string; target: string }[],
+  fromNodeId: string,
+): number {
+  let count = 0;
+  let currentId: string | null = fromNodeId;
+  const seen = new Set<string>();
+  while (currentId && !seen.has(currentId)) {
+    seen.add(currentId);
+    const node = nodes.find(n => n.id === currentId);
+    if (!node) break;
+    if (INTERACTIVE_TYPES.has(node.data?.nodeType)) count++;
+    const nextEdge = edges.find(e => e.source === currentId);
+    currentId = nextEdge?.target ?? null;
+  }
+  return count;
+}
+
+function getStartNodeId(nodes: FlowNode[], edges: { target: string }[]): string {
+  const withIncoming = new Set(edges.map(e => e.target));
+  const byStart = nodes.find(n => (n.data as { is_start?: boolean })?.is_start === true);
+  if (byStart) return byStart.id;
+  const noIncoming = nodes.find(n => !withIncoming.has(n.id));
+  if (noIncoming) return noIncoming.id;
+  return nodes[0]?.id ?? '';
+}
+
 export function PreviewModal({ open, onClose }: PreviewModalProps) {
   const { nodes, edges } = useFlowStore();
   const isMobile = useIsMobile();
-  const startNodeId = nodes[0]?.id ?? '';
+  const rawStartId = getStartNodeId(nodes, edges);
+  const startNodeId = resolveToInteractiveNode(nodes, edges, rawStartId) ?? (rawStartId || (nodes[0]?.id ?? ''));
 
   const [state, setState] = useState<PreviewState>({
     currentNodeId: startNodeId,
@@ -30,12 +82,15 @@ export function PreviewModal({ open, onClose }: PreviewModalProps) {
     completed: false,
   });
 
-  // Reset if start node changes while open
+  const prevOpenRef = useRef(false);
   useEffect(() => {
-    if (open && !state.currentNodeId && startNodeId) {
-      setState(s => ({ ...s, currentNodeId: startNodeId }));
+    if (open && !prevOpenRef.current) {
+      const raw = getStartNodeId(nodes, edges);
+      const resolved = resolveToInteractiveNode(nodes, edges, raw) ?? (raw || (nodes[0]?.id ?? ''));
+      setState({ currentNodeId: resolved, history: [], answers: {}, completed: false });
     }
-  }, [open, startNodeId, state.currentNodeId]);
+    prevOpenRef.current = open;
+  }, [open, nodes, edges]);
 
   const currentNode = nodes.find(n => n.id === state.currentNodeId);
 
@@ -44,28 +99,51 @@ export function PreviewModal({ open, onClose }: PreviewModalProps) {
       setState(s => ({ ...s, completed: true }));
       return;
     }
-    const exists = nodes.find(n => n.id === targetId);
+    const resolvedId = resolveToInteractiveNode(nodes, edges, targetId);
+    const effectiveId = resolvedId ?? targetId;
+    const exists = nodes.find(n => n.id === effectiveId);
     if (!exists) {
       setState(s => ({ ...s, completed: true }));
       return;
     }
     setState(s => ({
       ...s,
-      currentNodeId: targetId,
+      currentNodeId: effectiveId,
       history: [...s.history, s.currentNodeId],
       answers: answerValue ? { ...s.answers, [s.currentNodeId]: answerValue } : s.answers,
     }));
-  }, [nodes]);
+  }, [nodes, edges]);
 
   const handleAnswer = useCallback((option: AnswerOption) => {
     if (!currentNode) return;
-    
-    // Find edge from this node that matches the selected option's value
-    const targetEdge = edges.find(e => 
-      e.source === currentNode.id && 
-      (e.sourceHandle === option.value || e.sourceHandle === 'source')
-    );
-    
+    const outgoing = edges.filter(e => e.source === currentNode.id);
+    const labelNorm = (s: string) => (s ?? '').trim().toLowerCase();
+    const options = currentNode.data?.options ?? [];
+    const handleMatchesOption = (e: { sourceHandle?: string | null; data?: { label?: string } }, o: AnswerOption) =>
+      labelNorm(e.sourceHandle ?? '') === labelNorm(o.value ?? '') ||
+      e.sourceHandle === 'source' ||
+      labelNorm(e.data?.label ?? '') === labelNorm(o.label ?? '') ||
+      labelNorm(e.data?.label ?? '') === labelNorm(o.value ?? '');
+    let targetEdge =
+      outgoing.find(e => e.sourceHandle === option.value || e.sourceHandle === 'source') ??
+      outgoing.find(e => labelNorm(e.sourceHandle ?? '') === labelNorm(option.value ?? '')) ??
+      outgoing.find(e => labelNorm(e.data?.label ?? '') === labelNorm(option.label ?? '')) ??
+      outgoing.find(e => labelNorm(e.data?.label ?? '') === labelNorm(option.value ?? '')) ??
+      (outgoing.length === 1 ? outgoing[0] : null);
+    if (!targetEdge && outgoing.length >= 1 && options.length >= 1) {
+      const optionIndex = options.findIndex(o => o.id === option.id || o.value === option.value);
+      if (optionIndex >= 0 && optionIndex < outgoing.length) {
+        const sortedOutgoing = [...outgoing].sort((a, b) => {
+          const ai = options.findIndex(o => handleMatchesOption(a, o));
+          const bi = options.findIndex(o => handleMatchesOption(b, o));
+          if (ai === -1 && bi === -1) return 0;
+          if (ai === -1) return 1;
+          if (bi === -1) return -1;
+          return ai - bi;
+        });
+        targetEdge = sortedOutgoing[optionIndex];
+      }
+    }
     if (targetEdge?.target) {
       navigateTo(targetEdge.target, option.value);
     } else {
@@ -75,10 +153,7 @@ export function PreviewModal({ open, onClose }: PreviewModalProps) {
 
   const handleContinue = useCallback(() => {
     if (!currentNode) return;
-    
-    // Find any outgoing edge
     const targetEdge = edges.find(e => e.source === currentNode.id);
-    
     if (targetEdge?.target) {
       navigateTo(targetEdge.target);
     } else {
@@ -103,8 +178,14 @@ export function PreviewModal({ open, onClose }: PreviewModalProps) {
     setTimeout(restart, 300);
   };
 
-  const totalSteps = nodes.filter(n => n.data.nodeType === 'question' || n.data.nodeType === 'info').length;
-  const currentStep = state.history.length + 1;
+  const currentStep =
+    state.history.filter(id => {
+      const n = nodes.find(nd => nd.id === id);
+      return n && INTERACTIVE_TYPES.has(n.data.nodeType);
+    }).length + 1;
+  const nextEdgeTarget = edges.find(e => e.source === state.currentNodeId)?.target;
+  const forwardSteps = nextEdgeTarget ? countForwardSteps(nodes, edges, nextEdgeTarget) : 0;
+  const totalSteps = currentStep + forwardSteps;
   const progress = Math.min((currentStep / Math.max(totalSteps, 1)) * 100, 100);
 
   return (

@@ -29,7 +29,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
   try {
     const body = req.body as CreateNodeBody;
-    const validTypes = ['question', 'info', 'offer', 'conditional', 'delay'];
+    const validTypes = ['question', 'info', 'offer', 'conditional'];
     if (!body.type || !body.title) {
       return res.status(400).json({ error: 'type and title are required' });
     }

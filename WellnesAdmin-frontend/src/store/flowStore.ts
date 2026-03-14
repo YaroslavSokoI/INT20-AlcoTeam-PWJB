@@ -11,7 +11,6 @@ const DEFAULT_POSITIONS: Record<NodeType, { x: number; y: number }> = {
   info: { x: 400, y: 300 },
   offer: { x: 600, y: 300 },
   conditional: { x: 400, y: 500 },
-  delay: { x: 200, y: 500 },
 };
 
 type StoreExtended = FlowStore & {
@@ -219,14 +218,8 @@ export const useFlowStore = create<FlowStore>((set, get) => ({
   },
 
   async publish() {
-    try {
-      await apiService.publish();
-      set(s => ({ isPublished: true, publishVersion: s.publishVersion + 1 }));
-      alert('Changes are live!');
-    } catch (err) {
-      console.error('Publish failed', err);
-      alert('Publish failed. Check console for details.');
-    }
+    await apiService.publish();
+    set(s => ({ isPublished: true, publishVersion: s.publishVersion + 1 }));
   },
   setFlowNodes(nodes) { set({ nodes }); },
   setFlowEdges(edges) { set({ edges }); },

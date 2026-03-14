@@ -8,7 +8,7 @@ import { cn } from '@/lib/cn';
 
 export function GraphControls() {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
-  const { nodes, edges, setFlowNodes, publishVersion } = useFlowStore();
+  const { nodes, edges, setFlowNodes } = useFlowStore();
   const isMobile = useIsMobile();
 
   const handleAutoLayout = useCallback(() => {
@@ -31,18 +31,16 @@ export function GraphControls() {
         <span className="text-[11px] font-bold text-[var(--color-text-primary)]">{edges.length}</span>
         <span className="text-[9px] text-[var(--color-text-muted)] font-medium">e</span>
       </div>
-      <div className="w-px h-2.5 bg-[var(--color-border)]" />
-      <div className="flex items-center gap-1">
-        <span className="text-[9px] font-black tracking-tight text-emerald-600">v{publishVersion}</span>
-      </div>
     </div>
   );
 
   const controlsBar = (
     <div className={cn(
       "flex items-center bg-[var(--color-surface)] rounded-full border border-[var(--color-border)] shadow-sm overflow-hidden",
-      isMobile ? "mb-4 ml-0" : "" // Push closer to edge
+      isMobile ? "mb-4 ml-0" : ""
     )}>
+      <UndoRedoButtons />
+      <div className="w-px h-3.5 bg-[var(--color-border)]" />
       <ControlButton icon={<ZoomIn className="w-3.5 h-3.5" />} title="Zoom in" onClick={() => zoomIn({ duration: 200 })} />
       <div className="w-px h-3.5 bg-[var(--color-border)]" />
       <ControlButton icon={<ZoomOut className="w-3.5 h-3.5" />} title="Zoom out" onClick={() => zoomOut({ duration: 200 })} />
@@ -69,6 +67,49 @@ export function GraphControls() {
         {controlsBar}
       </div>
     </Panel>
+  );
+}
+
+function UndoRedoButtons() {
+  const { past, future, undo, redo } = useFlowStore();
+  const canUndo = past.length > 0;
+  const canRedo = future.length > 0;
+
+  return (
+    <>
+      <button
+        onClick={undo}
+        disabled={!canUndo}
+        title="Undo (Ctrl+Z)"
+        className={cn(
+          "p-2 transition-colors",
+          canUndo
+            ? "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg)] active:bg-[var(--color-bg)] active:scale-90"
+            : "text-[var(--color-text-muted)] opacity-30 cursor-not-allowed"
+        )}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 7v6h6"/><path d="M3 13C5 7.333 9.333 4.5 15 4.5c5 0 8.5 3 8.5 7.5S19 19 13 19H9"/>
+        </svg>
+      </button>
+      <div className="w-px h-3.5 bg-[var(--color-border)]" />
+      <button
+        onClick={redo}
+        disabled={!canRedo}
+        title="Redo (Ctrl+Y)"
+        className={cn(
+          "p-2 transition-colors",
+          canRedo
+            ? "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg)] active:bg-[var(--color-bg)] active:scale-90"
+            : "text-[var(--color-text-muted)] opacity-30 cursor-not-allowed"
+        )}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 7v6h-6"/><path d="M21 13c-2 5.667-6.333 8.5-12 8.5C3.5 21.5 0 18.5 0 14S4.5 7 11 7h4"/>
+        </svg>
+      </button>
+      <div className="w-px h-3.5 bg-[var(--color-border)]" />
+    </>
   );
 }
 

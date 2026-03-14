@@ -1,4 +1,4 @@
-export type NodeType = 'question' | 'info' | 'offer' | 'conditional' | 'delay';
+export type NodeType = 'question' | 'info' | 'offer' | 'conditional';
 export type QuestionType = 'single_choice' | 'multi_choice' | 'text_input' | 'number_input';
 
 export interface NodeOption {
@@ -16,7 +16,6 @@ export interface DbNode {
   options?: NodeOption[];
   attribute_key?: string;
   cta_text?: string;
-  delay_seconds?: number;
   digital_plan?: string;
   physical_kit?: string;
   why_text?: string;
@@ -66,7 +65,6 @@ export interface CreateNodeBody {
   options?: NodeOption[];
   attribute_key?: string;
   cta_text?: string;
-  delay_seconds?: number;
   digital_plan?: string;
   physical_kit?: string;
   why_text?: string;

@@ -5,7 +5,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- Used as FK target by edges and sessions.
 CREATE TABLE nodes (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  type       VARCHAR(20) NOT NULL CHECK (type IN ('question','info','offer','conditional','delay')),
+  type       VARCHAR(20) NOT NULL CHECK (type IN ('question','info','offer','conditional')),
   pos_x      FLOAT DEFAULT 0,
   pos_y      FLOAT DEFAULT 0,
   is_start   BOOLEAN DEFAULT FALSE,
@@ -48,12 +48,6 @@ CREATE TABLE conditional_nodes (
   title   TEXT NOT NULL DEFAULT ''
 );
 
-CREATE TABLE delay_nodes (
-  node_id       UUID PRIMARY KEY REFERENCES nodes(id) ON DELETE CASCADE,
-  title         TEXT NOT NULL DEFAULT '',
-  delay_seconds INT DEFAULT 0
-);
-
 -- ── UNIFIED READ VIEW ──────────────────────────────────────────
 CREATE OR REPLACE VIEW nodes_full AS
 SELECT
@@ -64,7 +58,7 @@ SELECT
   n.is_start,
   n.created_at,
   n.updated_at,
-  COALESCE(q.title, i.title, o.title, c.title, d.title, '') AS title,
+  COALESCE(q.title, i.title, o.title, c.title, '') AS title,
   CASE n.type
     WHEN 'info'  THEN i.content
     WHEN 'offer' THEN o.description
@@ -78,7 +72,6 @@ SELECT
     ELSE NULL
   END AS attribute_key,
   o.cta_text,
-  d.delay_seconds,
   o.digital_plan,
   o.physical_kit,
   o.why_text,
@@ -88,8 +81,7 @@ FROM nodes n
 LEFT JOIN question_nodes    q ON q.node_id = n.id
 LEFT JOIN info_nodes        i ON i.node_id = n.id
 LEFT JOIN offer_nodes       o ON o.node_id = n.id
-LEFT JOIN conditional_nodes c ON c.node_id = n.id
-LEFT JOIN delay_nodes       d ON d.node_id = n.id;
+LEFT JOIN conditional_nodes c ON c.node_id = n.id;
 
 -- ── EDGES ──────────────────────────────────────────────────────
 CREATE TABLE edges (

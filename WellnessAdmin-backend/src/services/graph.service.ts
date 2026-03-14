@@ -77,12 +77,6 @@ export async function createNode(data: CreateNodeBody): Promise<DbNode> {
           [nodeId, data.title ?? ''],
         );
         break;
-      case 'delay':
-        await client.query(
-          `INSERT INTO delay_nodes (node_id, title, delay_seconds) VALUES ($1, $2, $3)`,
-          [nodeId, data.title ?? '', data.delay_seconds ?? 0],
-        );
-        break;
     }
 
     await client.query('COMMIT');
@@ -192,21 +186,6 @@ export async function updateNode(id: string, data: Partial<CreateNodeBody>): Pro
           await client.query(
             `UPDATE conditional_nodes SET title = $1 WHERE node_id = $2`,
             [data.title, id],
-          );
-        }
-        break;
-      }
-      case 'delay': {
-        const dFields: string[] = [];
-        const dValues: unknown[] = [];
-        let di = 1;
-        if ('title' in data) { dFields.push(`title = $${di++}`); dValues.push(data.title); }
-        if ('delay_seconds' in data) { dFields.push(`delay_seconds = $${di++}`); dValues.push(data.delay_seconds ?? 0); }
-        if (dFields.length > 0) {
-          dValues.push(id);
-          await client.query(
-            `UPDATE delay_nodes SET ${dFields.join(', ')} WHERE node_id = $${di}`,
-            dValues,
           );
         }
         break;
