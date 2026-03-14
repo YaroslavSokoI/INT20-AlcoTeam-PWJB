@@ -20,7 +20,7 @@ export function GraphControls() {
   const statsBar = (
     <div className={cn(
       "flex items-center gap-2 px-2.5 py-1 bg-[var(--color-surface)] rounded-full border border-[var(--color-border)] shadow-sm",
-      isMobile ? "mt-12 ml-0" : "" // Push closer to edge
+      isMobile ? "mt-4 ml-0" : "" // Push closer to edge
     )}>
       <div className="flex items-center gap-1">
         <span className="text-[11px] font-bold text-[var(--color-text-primary)]">{nodes.length}</span>
@@ -41,7 +41,7 @@ export function GraphControls() {
   const controlsBar = (
     <div className={cn(
       "flex items-center bg-[var(--color-surface)] rounded-full border border-[var(--color-border)] shadow-sm overflow-hidden",
-      isMobile ? "mb-16 ml-0" : "" // Push closer to edge
+      isMobile ? "mb-4 ml-0" : "" // Push closer to edge
     )}>
       <ControlButton icon={<ZoomIn className="w-3.5 h-3.5" />} title="Zoom in" onClick={() => zoomIn({ duration: 200 })} />
       <div className="w-px h-3.5 bg-[var(--color-border)]" />
@@ -56,7 +56,7 @@ export function GraphControls() {
   if (isMobile) {
     return (
       <>
-        <Panel position="top-left" className="m-2">{statsBar}</Panel>
+        <Panel position="top-left" className="m-1">{statsBar}</Panel>
         <Panel position="bottom-left" className="m-2">{controlsBar}</Panel>
       </>
     );
