@@ -27,7 +27,7 @@ export function Topbar() {
     <>
       <header className="flex items-center h-14 md:h-12 px-4 bg-[var(--color-surface)] border-b border-[var(--color-border)] shrink-0 z-[100] relative">
         <div className="flex items-center gap-2 mr-4 md:mr-6">
-          <img src={logo} alt="Wellness" className="h-8 w-auto md:h-9" />
+          <img src={logo} alt="Wellness" className="h-9 w-auto md:h-11" />
           {!isMobile && <span className="text-[10px] md:text-xs text-[var(--color-text-muted)] font-medium">Admin</span>}
         </div>
 
