@@ -241,11 +241,6 @@ function NodePreview({ node, onAnswer, onContinue }: { node: FlowNode; onAnswer:
           </div>
           <h2 className="text-2xl font-black text-[var(--color-text-primary)] mb-3 leading-tight">{data.offerTitle || data.label}</h2>
           <p className="text-sm font-bold text-[var(--color-text-secondary)] leading-relaxed opacity-80 mb-6">{data.offerDescription}</p>
-          <div className="h-px bg-[var(--color-border)] opacity-50 mb-6" />
-          <div className="flex items-center justify-between font-black text-sm">
-            <span>Special Deal</span>
-            <span className="text-xl text-emerald-600">FREE</span>
-          </div>
         </div>
         <div className="mt-auto">
           <button onClick={onContinue} className="w-full py-5 rounded-2xl bg-black text-white text-base font-black shadow-2xl shadow-black/20 active:scale-[0.98] transition-all">

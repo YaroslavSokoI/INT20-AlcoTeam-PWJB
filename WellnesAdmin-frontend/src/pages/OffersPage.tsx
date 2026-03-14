@@ -25,7 +25,6 @@ export function OffersPage() {
           id: o.id,
           title: o.name,
           category: 'WELLNESS', // Fallback as BE doesn't have an explicit enum today
-          price: '$0.00', // Mock data for UI until BE adds price
           conversion: Math.floor(Math.random() * 15 + 1) + '.' + Math.floor(Math.random() * 9) + '%', // Mock stats
           users: Math.floor(Math.random() * 2000 + 100).toLocaleString(), // Mock stats
           status: 'active',
@@ -187,7 +186,7 @@ function FilterTab({ active, onClick, label }: { active: boolean; onClick: () =>
   );
 }
 
-function OfferCard({ title, category, price, conversion, users, status, color }: Offer) {
+function OfferCard({ title, category, conversion, users, status, color }: Offer) {
   const colorMap: any = {
     orange: 'bg-orange-50 text-orange-600 border-orange-100',
     emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100',
@@ -213,14 +212,9 @@ function OfferCard({ title, category, price, conversion, users, status, color }:
         </div>
       </div>
 
-      <div className="flex items-center gap-4 mb-5 p-3 bg-[var(--color-surface-2)]/50 rounded-xl border border-[var(--color-border)]/50">
-        <div className="flex-1">
-          <p className="text-[9px] text-[var(--color-text-muted)] font-black uppercase mb-0.5">Price</p>
-          <p className="text-sm font-black text-[var(--color-text-primary)]">{price}</p>
-        </div>
-        <div className="w-px h-6 bg-[var(--color-border)] opacity-60" />
-        <div className="flex-1">
-          <p className="text-[9px] text-[var(--color-text-muted)] font-black uppercase mb-0.5">Conv.</p>
+      <div className="mb-5 p-3 bg-[var(--color-surface-2)]/50 rounded-xl border border-[var(--color-border)]/50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-[9px] text-[var(--color-text-muted)] font-black uppercase mb-0.5">Conversion Rate</p>
           <p className="text-sm font-black text-emerald-600">{conversion}</p>
         </div>
       </div>

@@ -18,7 +18,6 @@ export function NewOfferModal({ isOpen, onClose, onAdd }: NewOfferModalProps) {
   const [formData, setFormData] = useState<Partial<Offer>>({
     title: '',
     category: 'WEIGHT_LOSS',
-    price: '',
     status: 'draft',
   });
 
@@ -26,7 +25,7 @@ export function NewOfferModal({ isOpen, onClose, onAdd }: NewOfferModalProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title || !formData.price || isSubmitting) return;
+    if (!formData.title || isSubmitting) return;
 
     const categoryMeta = OFFER_CATEGORIES.find(c => c.value === formData.category);
     setIsSubmitting(true);
@@ -47,7 +46,6 @@ export function NewOfferModal({ isOpen, onClose, onAdd }: NewOfferModalProps) {
         id: created.id,
         title: created.name,
         category: formData.category as OfferCategory,
-        price: formData.price.startsWith('$') ? formData.price : `$${formData.price}`,
         status: formData.status as OfferStatus,
         conversion: '0%',
         users: '0',
@@ -55,7 +53,7 @@ export function NewOfferModal({ isOpen, onClose, onAdd }: NewOfferModalProps) {
       };
 
       onAdd(newOffer);
-      setFormData({ title: '', category: 'WEIGHT_LOSS', price: '', status: 'draft' });
+      setFormData({ title: '', category: 'WEIGHT_LOSS', status: 'draft' });
       onClose();
     } catch (error) {
       console.error('Failed to create offer:', error);
@@ -118,32 +116,16 @@ export function NewOfferModal({ isOpen, onClose, onAdd }: NewOfferModalProps) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] ml-1">Price</label>
-                  <div className="relative">
-                    <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
-                    <input
-                      required
-                      value={formData.price}
-                      onChange={e => setFormData({ ...formData, price: e.target.value })}
-                      className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-2xl pl-11 pr-4 py-3.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-black/5 transition-all"
-                      placeholder="29.99"
-                    />
-                  </div>
-                </div>
-
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] ml-1">Status</label>
                   <select
                     value={formData.status}
                     onChange={e => setFormData({ ...formData, status: e.target.value as OfferStatus })}
-                    className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-2xl px-4 py-3.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-black/5 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22currentColor%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:16px] bg-[right_12px_center] bg-no-repeat"
+                    className="w-full bg-[var(--color-surface-2)]/50 border border-[var(--color-border)] rounded-2xl px-4 py-3.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-black/5 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22currentColor%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:16px] bg-[right_12px_center] bg-no-repeat transition-all"
                   >
                     {OFFER_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                   </select>
                 </div>
-              </div>
 
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] ml-1">Category</label>

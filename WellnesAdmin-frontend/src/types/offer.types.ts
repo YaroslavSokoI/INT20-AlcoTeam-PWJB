@@ -5,7 +5,6 @@ export interface Offer {
   id: string;
   title: string;
   category: OfferCategory;
-  price: string;
   conversion: string;
   users: string;
   status: OfferStatus;
