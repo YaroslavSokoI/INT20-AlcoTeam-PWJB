@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useReactFlow, Panel } from '@xyflow/react';
-import { ZoomIn, ZoomOut, Maximize2, LayoutDashboard } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, LayoutDashboard, Undo2, Redo2 } from 'lucide-react';
 import { useFlowStore } from '@/store/flowStore';
 import { getAutoLayout } from '@/lib/layout';
 import { useIsMobile } from '@/hooks/useResponsive';
@@ -88,9 +88,7 @@ function UndoRedoButtons() {
             : "text-[var(--color-text-muted)] opacity-30 cursor-not-allowed"
         )}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 7v6h6"/><path d="M3 13C5 7.333 9.333 4.5 15 4.5c5 0 8.5 3 8.5 7.5S19 19 13 19H9"/>
-        </svg>
+        <Undo2 className="w-3.5 h-3.5" />
       </button>
       <div className="w-px h-3.5 bg-[var(--color-border)]" />
       <button
@@ -104,9 +102,7 @@ function UndoRedoButtons() {
             : "text-[var(--color-text-muted)] opacity-30 cursor-not-allowed"
         )}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 7v6h-6"/><path d="M21 13c-2 5.667-6.333 8.5-12 8.5C3.5 21.5 0 18.5 0 14S4.5 7 11 7h4"/>
-        </svg>
+        <Redo2 className="w-3.5 h-3.5" />
       </button>
       <div className="w-px h-3.5 bg-[var(--color-border)]" />
     </>
