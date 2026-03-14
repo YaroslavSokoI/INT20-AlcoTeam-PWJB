@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ArrowLeft, Check, Smartphone, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useFlowStore } from '@/store/flowStore';
-import type { FlowNode, AnswerOption, TransitionRule } from '@/types';
+import type { FlowNode, AnswerOption } from '@/types';
 import { useIsMobile } from '@/hooks/useResponsive';
 
 interface PreviewModalProps {
@@ -19,7 +19,7 @@ interface PreviewState {
 }
 
 export function PreviewModal({ open, onClose }: PreviewModalProps) {
-  const { nodes } = useFlowStore();
+  const { nodes, edges } = useFlowStore();
   const isMobile = useIsMobile();
   const startNodeId = nodes[0]?.id ?? '';
 
@@ -59,31 +59,32 @@ export function PreviewModal({ open, onClose }: PreviewModalProps) {
 
   const handleAnswer = useCallback((option: AnswerOption) => {
     if (!currentNode) return;
-    const transitions: TransitionRule[] = currentNode.data.transitions ?? [];
-    // 1. Exact match
-    // 2. Fallback rule (empty answerValue)
-    // 3. First available transition
-    const rule = transitions.find(r => r.answerValue === option.value) 
-      ?? transitions.find(r => r.answerValue === '')
-      ?? transitions[0];
     
-    if (rule?.targetNodeId) {
-      navigateTo(rule.targetNodeId, option.value);
+    // Find edge from this node that matches the selected option's value
+    const targetEdge = edges.find(e => 
+      e.source === currentNode.id && 
+      (e.sourceHandle === option.value || e.sourceHandle === 'source')
+    );
+    
+    if (targetEdge?.target) {
+      navigateTo(targetEdge.target, option.value);
     } else {
       setState(s => ({ ...s, completed: true }));
     }
-  }, [currentNode, navigateTo]);
+  }, [currentNode, edges, navigateTo]);
 
   const handleContinue = useCallback(() => {
     if (!currentNode) return;
-    const transitions: TransitionRule[] = currentNode.data.transitions ?? [];
-    const rule = transitions[0];
-    if (rule?.targetNodeId) {
-      navigateTo(rule.targetNodeId);
+    
+    // Find any outgoing edge
+    const targetEdge = edges.find(e => e.source === currentNode.id);
+    
+    if (targetEdge?.target) {
+      navigateTo(targetEdge.target);
     } else {
       setState(s => ({ ...s, completed: true }));
     }
-  }, [currentNode, navigateTo]);
+  }, [currentNode, edges, navigateTo]);
 
   const goBack = useCallback(() => {
     setState(s => {

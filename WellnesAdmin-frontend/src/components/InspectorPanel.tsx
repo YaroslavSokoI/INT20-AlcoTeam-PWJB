@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { cn } from '@/lib/cn';
 import { useFlowStore, selectSelectedNode } from '@/store/flowStore';
 import { NODE_TYPE_META } from '@/types';
-import type { AnswerOption, FlowNodeData, NodeType, TransitionRule } from '@/types';
+import type { AnswerOption, FlowNodeData, NodeType } from '@/types';
 import { useIsMobile } from '@/hooks/useResponsive';
 import { shortId } from '@/components/nodes/NodeCards';
 
@@ -111,21 +111,7 @@ function InspectorContent({ nodeId, initialData, onClose, isMobile }: InspectorC
     update({ options: (data.options ?? []).filter(o => o.id !== id) });
   };
 
-  const addRule = () => {
-    const rules = data.transitions ?? [];
-    update({ transitions: [...rules, { id: uuidv4(), answerValue: '', targetNodeId: '' }] });
-  };
-
-  const updateRule = (id: string, patch: Partial<TransitionRule>) => {
-    update({ transitions: (data.transitions ?? []).map(r => r.id === id ? { ...r, ...patch } : r) });
-  };
-
-  const removeRule = (id: string) => {
-    update({ transitions: (data.transitions ?? []).filter(r => r.id !== id) });
-  };
-
   const meta = NODE_TYPE_META[data.nodeType];
-  const otherNodes = nodes.filter(n => n.id !== nodeId);
 
   return (
     <>
@@ -272,28 +258,6 @@ function InspectorContent({ nodeId, initialData, onClose, isMobile }: InspectorC
             </Section>
           </div>
         )}
-
-        <Section label="Transition Rules">
-          <div className="space-y-3">
-            {(data.transitions ?? []).map(rule => (
-              <RuleRow
-                key={rule.id}
-                rule={rule}
-                options={data.options ?? []}
-                nodes={otherNodes}
-                onChange={patch => updateRule(rule.id, patch)}
-                onRemove={() => removeRule(rule.id)}
-              />
-            ))}
-          </div>
-          <button
-            onClick={addRule}
-            className="mt-3 w-full py-2.5 rounded-xl border border-dashed border-[var(--color-border-2)] text-xs font-bold text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)] active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
-          >
-            <Plus className="w-4 h-4" />
-            Add rule
-          </button>
-        </Section>
       </div>
 
       <div className={cn(
@@ -342,47 +306,6 @@ function OptionRow({ option, index, onChange, onRemove }: { option: AnswerOption
       <button onClick={onRemove} className="w-10 h-10 md:w-8 md:h-8 flex items-center justify-center rounded-xl text-red-400 hover:bg-red-50 active:bg-red-100 transition-colors shrink-0">
         <X className="w-4 h-4 md:w-3.5 md:h-3.5" />
       </button>
-    </div>
-  );
-}
-
-function RuleRow({ rule, options, nodes, onChange, onRemove }: { rule: TransitionRule; options: AnswerOption[]; nodes: Array<{ id: string; data: FlowNodeData }>; onChange: (patch: Partial<TransitionRule>) => void; onRemove: () => void }) {
-  return (
-    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4 md:p-3 space-y-3 md:space-y-2 relative group">
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Condition</span>
-        <button onClick={onRemove} className="text-red-400 hover:text-red-500 active:scale-90"><X className="w-4 h-4" /></button>
-      </div>
-      
-      <div className="space-y-1">
-        <label className="text-[9px] font-bold text-[var(--color-text-muted)] ml-1">IF ANSWER IS</label>
-        <div className="relative">
-          <select
-            value={rule.answerValue}
-            onChange={e => onChange({ answerValue: e.target.value })}
-            className="w-full text-xs font-bold appearance-none rounded-xl border border-[var(--color-border)] bg-white px-4 py-2.5 text-[var(--color-text-primary)] focus:outline-none pr-10"
-          >
-            <option value="">— Any Answer —</option>
-            {options.map(o => <option key={o.id} value={o.value}>{o.label}</option>)}
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)] pointer-events-none" />
-        </div>
-      </div>
-
-      <div className="space-y-1">
-        <label className="text-[9px] font-bold text-[var(--color-text-muted)] ml-1">GOTO NODE</label>
-        <div className="relative">
-          <select
-            value={rule.targetNodeId}
-            onChange={e => onChange({ targetNodeId: e.target.value })}
-            className="w-full text-xs font-bold appearance-none rounded-xl border border-[var(--color-border)] bg-white px-4 py-2.5 text-[var(--color-text-primary)] focus:outline-none pr-10"
-          >
-            <option value="">— End of Flow —</option>
-            {nodes.map(n => <option key={n.id} value={n.id}>{n.data.label} (#{shortId(n.id)})</option>)}
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)] pointer-events-none" />
-        </div>
-      </div>
     </div>
   );
 }
