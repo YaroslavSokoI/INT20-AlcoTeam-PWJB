@@ -7,8 +7,10 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/cn';
 import { useFlowStore } from '@/store/flowStore';
+import { useAuthStore } from '@/store/authStore';
 import { PreviewModal } from '@/components/PreviewModal';
 import { useIsMobile } from '@/hooks/useResponsive';
+import { LogOut, User } from 'lucide-react';
 
 export function Topbar() {
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -16,6 +18,7 @@ export function Topbar() {
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   const isMobile = useIsMobile();
   const { publishVersion, isPublished, publish } = useFlowStore();
+  const { user, logout } = useAuthStore();
 
   const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
 
@@ -64,8 +67,13 @@ export function Topbar() {
               >
                 <Upload className="w-3.5 h-3.5" /><span className="hidden sm:inline">Publish</span>
               </button>
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--color-border)] text-xs font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)] transition-colors">
-                <Save className="w-3.5 h-3.5" /><span className="hidden sm:inline">Save</span>
+              <button
+                onClick={logout}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-100 bg-red-50 text-xs font-black text-red-600 hover:bg-red-100 transition-colors"
+                title="Logout"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden xl:inline">Logout</span>
               </button>
             </>
           ) : (
@@ -107,8 +115,8 @@ export function Topbar() {
                 exit={{ opacity: 0, scale: 0.95, y: -10 }}
                 className="absolute top-14 right-4 w-40 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-xl z-[120] overflow-hidden py-1"
               >
-                <ActionButton icon={<Upload className="w-4 h-4" />} label="Publish" onClick={() => { publish(); setShowActionsMenu(false); }} primary />
-                <ActionButton icon={<Save className="w-4 h-4" />} label="Save" onClick={() => setShowActionsMenu(false)} />
+                 <ActionButton icon={<Upload className="w-4 h-4" />} label="Publish" onClick={() => { publish(); setShowActionsMenu(false); }} primary />
+                <ActionButton icon={<LogOut className="w-4 h-4" />} label="Logout" onClick={() => { logout(); setShowActionsMenu(false); }} />
                 <div className="h-px bg-[var(--color-border)] my-1 mx-2" />
                 <div className="px-3 py-2 flex items-center justify-between">
                   <span className="text-[10px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Version</span>
