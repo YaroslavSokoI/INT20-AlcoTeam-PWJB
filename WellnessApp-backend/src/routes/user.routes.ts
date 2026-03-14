@@ -140,6 +140,74 @@ router.post('/sessions/:id/answer', async (req: Request, res: Response) => {
   }
 });
 
+// ---- POST /api/user/sessions/:id/back -------------------
+// Go back to the previous node by deleting the last answer and recalculating attributes.
+router.post('/sessions/:id/back', async (req: Request, res: Response) => {
+  try {
+    const sessionId = req.params.id;
+
+    // Load session
+    const { rows: sessionRows } = await pool.query<Session>(
+      'SELECT * FROM sessions WHERE id = $1',
+      [sessionId],
+    );
+    if (sessionRows.length === 0) return res.status(404).json({ error: 'Session not found' });
+
+    // Find the latest answer
+    const { rows: answerRows } = await pool.query(
+      'SELECT * FROM answers WHERE session_id = $1 ORDER BY created_at DESC LIMIT 1',
+      [sessionId]
+    );
+
+    if (answerRows.length === 0) {
+      return res.status(400).json({ error: 'Already at the beginning, cannot go back' });
+    }
+
+    const lastAnswer = answerRows[0];
+
+    // Delete the latest answer
+    await pool.query(
+      'DELETE FROM answers WHERE id = $1',
+      [lastAnswer.id]
+    );
+
+    // Recompute attributes from remaining answers
+    const { rows: remainingAnswers } = await pool.query(
+      'SELECT * FROM answers WHERE session_id = $1 ORDER BY created_at ASC',
+      [sessionId]
+    );
+
+    let updatedAttributes: Record<string, any> = {};
+    for (const ans of remainingAnswers) {
+      if (ans.attribute_key) {
+        updatedAttributes[ans.attribute_key] = ans.value;
+      }
+    }
+
+    // Update session: revert to previous node and re-apply attributes
+    await pool.query(
+      `UPDATE sessions 
+       SET current_node_id = $1, 
+           attributes = $2::jsonb, 
+           completed = FALSE, 
+           completed_at = NULL 
+       WHERE id = $3`,
+      [lastAnswer.node_id, JSON.stringify(updatedAttributes), sessionId]
+    );
+
+    // Load the previous node to return
+    const { rows: previousNodes } = await pool.query<DbNode>(
+      'SELECT * FROM nodes WHERE id = $1',
+      [lastAnswer.node_id]
+    );
+    const previousNode = previousNodes[0] ?? null;
+
+    res.json({ currentNode: previousNode });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to go back', detail: String(err) });
+  }
+});
+
 // ---- GET /api/user/sessions/:id/offer -------------------
 // Compute and return the personalized offer for a completed session.
 router.get('/sessions/:id/offer', async (req: Request, res: Response) => {

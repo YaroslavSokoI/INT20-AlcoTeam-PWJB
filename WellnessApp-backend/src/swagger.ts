@@ -18,7 +18,7 @@ export const swaggerDocument = {
         properties: {
           value: { type: 'string', example: 'weight_loss' },
           label: { type: 'string', example: 'Lose Weight' },
-          icon:  { type: 'string', example: '🔥' },
+          icon: { type: 'string', example: '🔥' },
         },
       },
 
@@ -26,10 +26,10 @@ export const swaggerDocument = {
         type: 'object',
         description: 'A quiz node — either a question to answer or an info page to display.',
         properties: {
-          id:            { type: 'string', format: 'uuid' },
-          type:          { type: 'string', enum: ['question', 'info'], example: 'question' },
-          title:         { type: 'string', example: 'What is your main wellness goal?' },
-          description:   { type: 'string', nullable: true, example: "We'll build a program tailored specifically to what you want to achieve." },
+          id: { type: 'string', format: 'uuid' },
+          type: { type: 'string', enum: ['question', 'info'], example: 'question' },
+          title: { type: 'string', example: 'What is your main wellness goal?' },
+          description: { type: 'string', nullable: true, example: "We'll build a program tailored specifically to what you want to achieve." },
           question_type: {
             type: 'string',
             nullable: true,
@@ -49,24 +49,24 @@ export const swaggerDocument = {
             description: 'The user attribute key this answer maps to. Send this back in the answer body.',
           },
           is_start: { type: 'boolean' },
-          pos_x:    { type: 'number' },
-          pos_y:    { type: 'number' },
+          pos_x: { type: 'number' },
+          pos_y: { type: 'number' },
         },
       },
 
       Session: {
         type: 'object',
         properties: {
-          id:              { type: 'string', format: 'uuid' },
+          id: { type: 'string', format: 'uuid' },
           current_node_id: { type: 'string', format: 'uuid', nullable: true },
-          attributes:      {
+          attributes: {
             type: 'object',
             description: 'Accumulated user attributes from all previous answers.',
             additionalProperties: true,
             example: { goal: 'weight_loss', context: 'home', level: 'beginner' },
           },
-          completed:    { type: 'boolean' },
-          created_at:   { type: 'string', format: 'date-time' },
+          completed: { type: 'boolean' },
+          created_at: { type: 'string', format: 'date-time' },
           completed_at: { type: 'string', format: 'date-time', nullable: true },
         },
       },
@@ -74,23 +74,23 @@ export const swaggerDocument = {
       Offer: {
         type: 'object',
         properties: {
-          id:           { type: 'string', format: 'uuid' },
-          name:         { type: 'string', example: 'Quick Fit Micro-Workouts' },
-          slug:         { type: 'string', example: 'quick-fit-micro' },
-          description:  { type: 'string', nullable: true },
+          id: { type: 'string', format: 'uuid' },
+          name: { type: 'string', example: 'Quick Fit Micro-Workouts' },
+          slug: { type: 'string', example: 'quick-fit-micro' },
+          description: { type: 'string', nullable: true },
           digital_plan: { type: 'string', nullable: true },
           physical_kit: { type: 'string', nullable: true },
-          why_text:     { type: 'string', nullable: true, description: 'Personalized explanation of why this offer matches the user.' },
-          cta_text:     { type: 'string', example: 'Start My Quick Fit Plan' },
-          is_addon:     { type: 'boolean' },
-          priority:     { type: 'integer' },
+          why_text: { type: 'string', nullable: true, description: 'Personalized explanation of why this offer matches the user.' },
+          cta_text: { type: 'string', example: 'Start My Quick Fit Plan' },
+          is_addon: { type: 'boolean' },
+          priority: { type: 'integer' },
         },
       },
 
       CreateSessionResponse: {
         type: 'object',
         properties: {
-          sessionId:   { type: 'string', format: 'uuid', description: 'Store this in localStorage — sent with every subsequent request.' },
+          sessionId: { type: 'string', format: 'uuid', description: 'Store this in localStorage — sent with every subsequent request.' },
           currentNode: { $ref: '#/components/schemas/Node' },
         },
       },
@@ -98,7 +98,7 @@ export const swaggerDocument = {
       GetSessionResponse: {
         type: 'object',
         properties: {
-          session:     { $ref: '#/components/schemas/Session' },
+          session: { $ref: '#/components/schemas/Session' },
           currentNode: { $ref: '#/components/schemas/Node', nullable: true },
         },
       },
@@ -188,7 +188,7 @@ export const swaggerDocument = {
       Error: {
         type: 'object',
         properties: {
-          error:  { type: 'string' },
+          error: { type: 'string' },
           detail: { type: 'string' },
         },
       },
@@ -217,11 +217,11 @@ export const swaggerDocument = {
                     description: "We'll build a program tailored specifically to what you want to achieve.",
                     question_type: 'single_choice',
                     options: [
-                      { value: 'weight_loss',   label: 'Lose Weight',     icon: '🔥' },
-                      { value: 'strength',      label: 'Build Strength',  icon: '💪' },
-                      { value: 'flexibility',   label: 'Get Flexible',    icon: '🧘' },
-                      { value: 'stress_relief', label: 'Reduce Stress',   icon: '🌿' },
-                      { value: 'endurance',     label: 'Boost Endurance', icon: '🏃' },
+                      { value: 'weight_loss', label: 'Lose Weight', icon: '🔥' },
+                      { value: 'strength', label: 'Build Strength', icon: '💪' },
+                      { value: 'flexibility', label: 'Get Flexible', icon: '🧘' },
+                      { value: 'stress_relief', label: 'Reduce Stress', icon: '🌿' },
+                      { value: 'endurance', label: 'Boost Endurance', icon: '🏃' },
                     ],
                     attribute_key: 'goal',
                     is_start: true,
@@ -310,9 +310,9 @@ export const swaggerDocument = {
                         title: 'Where do you prefer to work out?',
                         question_type: 'single_choice',
                         options: [
-                          { value: 'home',    label: 'At Home',    icon: '🏠' },
-                          { value: 'gym',     label: 'At the Gym', icon: '🏋️' },
-                          { value: 'outdoor', label: 'Outdoors',   icon: '🌳' },
+                          { value: 'home', label: 'At Home', icon: '🏠' },
+                          { value: 'gym', label: 'At the Gym', icon: '🏋️' },
+                          { value: 'outdoor', label: 'Outdoors', icon: '🌳' },
                         ],
                         attribute_key: 'context',
                       },
@@ -334,6 +334,33 @@ export const swaggerDocument = {
           500: { description: 'Server error' },
         },
       },
+    },
+
+    '/api/user/sessions/{id}/back': {
+      parameters: [
+        { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' }, description: 'Session ID' },
+      ],
+      post: {
+        tags: ['Sessions'],
+        summary: 'Go back to previous node',
+        description: `Reverts the session state to the previous node by deleting the most recent answer and re-evaluating session attributes to match the state before that answer.`,
+        responses: {
+          200: {
+            description: 'Previous node',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: { currentNode: { $ref: '#/components/schemas/Node', nullable: true } }
+                }
+              }
+            }
+          },
+          400: { description: 'Already at the beginning, cannot go back' },
+          404: { description: 'Session not found' },
+          500: { description: 'Server error' }
+        }
+      }
     },
 
     '/api/user/sessions/{id}/offer': {
