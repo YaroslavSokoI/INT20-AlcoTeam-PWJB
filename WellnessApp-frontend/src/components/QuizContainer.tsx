@@ -25,7 +25,7 @@ export function QuizContainer() {
   }, [hasHistory, goBack, goToWelcome]);
 
   useEffect(() => {
-    if (currentNode?.type === 'offer') {
+    if (currentNode && ['offer', 'conditional', 'delay'].includes(currentNode.type)) {
       submitAnswer(null);
     }
   }, [currentNode?.id]);
