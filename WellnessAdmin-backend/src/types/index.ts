@@ -1,4 +1,4 @@
-export type NodeType = 'question' | 'info';
+export type NodeType = 'question' | 'info' | 'offer' | 'result' | 'conditional' | 'delay';
 export type QuestionType = 'single_choice' | 'multi_choice' | 'text_input' | 'number_input';
 
 export interface NodeOption {

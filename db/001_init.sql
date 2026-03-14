@@ -2,7 +2,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 CREATE TABLE nodes (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  type          VARCHAR(20) NOT NULL CHECK (type IN ('question', 'info')),
+  type          VARCHAR(20) NOT NULL CHECK (type IN ('question', 'info', 'offer', 'result', 'conditional', 'delay')),
   title         TEXT NOT NULL,
   description   TEXT,
   question_type VARCHAR(20) CHECK (question_type IN ('single_choice', 'multi_choice', 'text_input', 'number_input')),

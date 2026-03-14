@@ -29,8 +29,12 @@ router.get('/:id', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
   try {
     const body = req.body as CreateNodeBody;
+    const validTypes = ['question', 'info', 'offer', 'result', 'conditional', 'delay'];
     if (!body.type || !body.title) {
       return res.status(400).json({ error: 'type and title are required' });
+    }
+    if (!validTypes.includes(body.type)) {
+      return res.status(400).json({ error: `type must be one of: ${validTypes.join(', ')}` });
     }
     const node = await graph.createNode(body);
     res.status(201).json(node);

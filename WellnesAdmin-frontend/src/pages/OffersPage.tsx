@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Tag, Users, CheckCircle, TrendingUp, Plus, Filter, Search, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -6,21 +6,40 @@ import { useIsMobile } from '@/hooks/useResponsive';
 import { NewOfferModal } from '@/components/NewOfferModal';
 import { OFFER_CATEGORIES } from '@/types';
 import type { Offer, OfferCategory } from '@/types';
-
-const INITIAL_OFFERS: Offer[] = [
-  { id: '1', title: 'Weight Loss Starter', category: 'WEIGHT_LOSS', price: '$29.99', conversion: '12.4%', users: '1,240', status: 'active', color: 'orange' },
-  { id: '2', title: 'Lean Strength Builder', category: 'STRENGTH', price: '$39.99', conversion: '8.2%', users: '860', status: 'active', color: 'emerald' },
-  { id: '3', title: 'Flexibility Plus', category: 'WELLNESS', price: '$19.99', conversion: '5.1%', users: '420', status: 'paused', color: 'purple' },
-  { id: '4', title: '30-Day Shred', category: 'WEIGHT_LOSS', price: '$49.99', conversion: '15.8%', users: '2,910', status: 'active', color: 'orange' },
-  { id: '5', title: 'Elite Performance', category: 'STRENGTH', price: '$99.99', conversion: '3.4%', users: '150', status: 'draft', color: 'blue' },
-];
+import { apiService } from '@/services/api';
 
 export function OffersPage() {
   const isMobile = useIsMobile();
-  const [offers, setOffers] = useState<Offer[]>(INITIAL_OFFERS);
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<OfferCategory | 'ALL'>('ALL');
+
+  useEffect(() => {
+    async function loadOffers() {
+      try {
+        setIsLoading(true);
+        const backendOffers = await apiService.getOffers();
+        const mapped: Offer[] = backendOffers.map(o => ({
+          id: o.id,
+          title: o.name,
+          category: 'WELLNESS', // Fallback as BE doesn't have an explicit enum today
+          price: '$0.00', // Mock data for UI until BE adds price
+          conversion: Math.floor(Math.random() * 15 + 1) + '.' + Math.floor(Math.random() * 9) + '%', // Mock stats
+          users: Math.floor(Math.random() * 2000 + 100).toLocaleString(), // Mock stats
+          status: 'active',
+          color: 'emerald',
+        }));
+        setOffers(mapped);
+      } catch (err) {
+        console.error('Failed to load offers', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadOffers();
+  }, []);
 
   const filteredOffers = useMemo(() => {
     return offers.filter(offer => {
@@ -31,7 +50,7 @@ export function OffersPage() {
   }, [offers, searchQuery, categoryFilter]);
 
   const activeOffersCount = offers.filter(o => o.status === 'active').length;
-  const totalUsers = offers.reduce((acc, o) => acc + parseInt(o.users.replace(',', '')), 0).toLocaleString();
+  const totalUsers = offers.reduce((acc, o) => acc + parseInt(o.users.replace(/,/g, '')), 0).toLocaleString();
 
   return (
     <div className="h-full overflow-y-auto bg-[var(--color-bg)] p-4 md:p-6 pb-24 md:pb-6">
@@ -41,7 +60,7 @@ export function OffersPage() {
           <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Manage and track conversion for your onboarding offers</p>
         </div>
         <div className="flex gap-2">
-          <button 
+          <button
             onClick={() => setIsModalOpen(true)}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-black text-white text-sm font-black active:scale-95 transition-all shadow-lg active:shadow-md"
           >
@@ -69,7 +88,7 @@ export function OffersPage() {
             className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-black/5 transition-all shadow-sm"
           />
           {searchQuery && (
-            <button 
+            <button
               onClick={() => setSearchQuery('')}
               className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full hover:bg-[var(--color-bg)]"
             >
@@ -77,15 +96,15 @@ export function OffersPage() {
             </button>
           )}
         </div>
-        
+
         <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
           <FilterTab active={categoryFilter === 'ALL'} onClick={() => setCategoryFilter('ALL')} label="All" />
           {OFFER_CATEGORIES.map(cat => (
-            <FilterTab 
-              key={cat.value} 
-              active={categoryFilter === cat.value} 
-              onClick={() => setCategoryFilter(cat.value)} 
-              label={cat.label} 
+            <FilterTab
+              key={cat.value}
+              active={categoryFilter === cat.value}
+              onClick={() => setCategoryFilter(cat.value)}
+              label={cat.label}
             />
           ))}
         </div>
@@ -93,29 +112,33 @@ export function OffersPage() {
 
       {/* Results Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <AnimatePresence mode="popLayout">
-          {filteredOffers.map((offer, i) => (
-            <motion.div
-              key={offer.id}
-              layout
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.2, delay: i * 0.05 }}
-            >
-              <OfferCard {...offer} />
-            </motion.div>
-          ))}
-        </AnimatePresence>
-        
-        {filteredOffers.length === 0 && (
+        {isLoading ? (
+          <div className="col-span-full py-20 flex justify-center text-[var(--color-text-muted)]">Loading offers...</div>
+        ) : (
+          <AnimatePresence mode="popLayout">
+            {filteredOffers.map((offer, i) => (
+              <motion.div
+                key={offer.id}
+                layout
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.2, delay: i * 0.05 }}
+              >
+                <OfferCard {...offer} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        )}
+
+        {!isLoading && filteredOffers.length === 0 && (
           <div className="col-span-full py-20 flex flex-col items-center justify-center text-center">
             <div className="w-16 h-16 rounded-3xl bg-[var(--color-surface-2)] flex items-center justify-center text-[var(--color-text-muted)] mb-4">
               <Search className="w-8 h-8" />
             </div>
             <p className="text-sm font-bold text-[var(--color-text-primary)]">No offers found</p>
             <p className="text-xs text-[var(--color-text-muted)] mt-1">Try adjusting your filters or search query</p>
-            <button 
+            <button
               onClick={() => { setSearchQuery(''); setCategoryFilter('ALL'); }}
               className="mt-4 text-xs font-black uppercase tracking-widest text-black underline"
             >
@@ -125,9 +148,9 @@ export function OffersPage() {
         )}
       </div>
 
-      <NewOfferModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      <NewOfferModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
         onAdd={newOffer => setOffers([newOffer, ...offers])}
       />
     </div>
@@ -154,8 +177,8 @@ function FilterTab({ active, onClick, label }: { active: boolean; onClick: () =>
       onClick={onClick}
       className={cn(
         "px-4 py-2 rounded-xl text-xs font-black transition-all whitespace-nowrap border",
-        active 
-          ? "bg-black text-white border-black shadow-md shadow-black/5" 
+        active
+          ? "bg-black text-white border-black shadow-md shadow-black/5"
           : "bg-[var(--color-surface)] text-[var(--color-text-secondary)] border-[var(--color-border)] hover:border-black/20"
       )}
     >
@@ -181,15 +204,15 @@ function OfferCard({ title, category, price, conversion, users, status, color }:
           </span>
           <h3 className="font-black text-[var(--color-text-primary)] leading-tight group-hover:text-black transition-colors truncate">{title}</h3>
         </div>
-        <div className={cn("shrink-0 px-2 py-1 rounded-full text-[10px] font-black capitalize border shadow-sm", 
-          status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 
-          status === 'paused' ? 'bg-amber-50 text-amber-700 border-amber-100' : 
-          'bg-slate-50 text-slate-700 border-slate-100'
+        <div className={cn("shrink-0 px-2 py-1 rounded-full text-[10px] font-black capitalize border shadow-sm",
+          status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+            status === 'paused' ? 'bg-amber-50 text-amber-700 border-amber-100' :
+              'bg-slate-50 text-slate-700 border-slate-100'
         )}>
           {status}
         </div>
       </div>
-      
+
       <div className="flex items-center gap-4 mb-5 p-3 bg-[var(--color-surface-2)]/50 rounded-xl border border-[var(--color-border)]/50">
         <div className="flex-1">
           <p className="text-[9px] text-[var(--color-text-muted)] font-black uppercase mb-0.5">Price</p>

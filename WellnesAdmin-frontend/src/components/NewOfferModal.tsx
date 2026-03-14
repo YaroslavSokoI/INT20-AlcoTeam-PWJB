@@ -22,26 +22,47 @@ export function NewOfferModal({ isOpen, onClose, onAdd }: NewOfferModalProps) {
     status: 'draft',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title || !formData.price) return;
+    if (!formData.title || !formData.price || isSubmitting) return;
 
     const categoryMeta = OFFER_CATEGORIES.find(c => c.value === formData.category);
+    setIsSubmitting(true);
 
-    const newOffer: Offer = {
-      id: uuidv4(),
-      title: formData.title,
-      category: formData.category as OfferCategory,
-      price: formData.price.startsWith('$') ? formData.price : `$${formData.price}`,
-      status: formData.status as OfferStatus,
-      conversion: '0%',
-      users: '0',
-      color: categoryMeta?.color || 'orange',
-    };
+    try {
+      // Import apiService locally or at top level. For simple copy/paste without importing at top level:
+      const { apiService } = await import('@/services/api');
 
-    onAdd(newOffer);
-    setFormData({ title: '', category: 'WEIGHT_LOSS', price: '', status: 'draft' });
-    onClose();
+      const created = await apiService.createOffer({
+        name: formData.title,
+        slug: formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        description: '', // Fallback
+        priority: 0,
+        is_addon: false,
+      });
+
+      const newOffer: Offer = {
+        id: created.id,
+        title: created.name,
+        category: formData.category as OfferCategory,
+        price: formData.price.startsWith('$') ? formData.price : `$${formData.price}`,
+        status: formData.status as OfferStatus,
+        conversion: '0%',
+        users: '0',
+        color: categoryMeta?.color || 'orange',
+      };
+
+      onAdd(newOffer);
+      setFormData({ title: '', category: 'WEIGHT_LOSS', price: '', status: 'draft' });
+      onClose();
+    } catch (error) {
+      console.error('Failed to create offer:', error);
+      alert('Failed to create offer. See console for details.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -64,8 +85,8 @@ export function NewOfferModal({ isOpen, onClose, onAdd }: NewOfferModalProps) {
             exit={isMobile ? { y: '100%' } : { scale: 0.95, opacity: 0, y: 20 }}
             className={cn(
               "fixed bg-[var(--color-surface)] z-[1001] flex flex-col overflow-hidden shadow-2xl",
-              isMobile 
-                ? "bottom-0 left-0 right-0 h-[80vh] rounded-t-[32px]" 
+              isMobile
+                ? "bottom-0 left-0 right-0 h-[80vh] rounded-t-[32px]"
                 : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md rounded-3xl"
             )}
           >

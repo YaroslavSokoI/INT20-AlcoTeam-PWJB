@@ -7,6 +7,7 @@ import { useFlowStore, selectSelectedNode } from '@/store/flowStore';
 import { NODE_TYPE_META } from '@/types';
 import type { AnswerOption, FlowNodeData, NodeType, TransitionRule } from '@/types';
 import { useIsMobile } from '@/hooks/useResponsive';
+import { shortId } from '@/components/nodes/NodeCards';
 
 export function InspectorPanel() {
   const selectedNode = useFlowStore(selectSelectedNode);
@@ -377,7 +378,7 @@ function RuleRow({ rule, options, nodes, onChange, onRemove }: { rule: Transitio
             className="w-full text-xs font-bold appearance-none rounded-xl border border-[var(--color-border)] bg-white px-4 py-2.5 text-[var(--color-text-primary)] focus:outline-none pr-10"
           >
             <option value="">— End of Flow —</option>
-            {nodes.map(n => <option key={n.id} value={n.id}>{n.data.label} ({n.id})</option>)}
+            {nodes.map(n => <option key={n.id} value={n.id}>{n.data.label} (#{shortId(n.id)})</option>)}
           </select>
           <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)] pointer-events-none" />
         </div>

@@ -5,6 +5,12 @@ import { cn } from '@/lib/cn';
 import { NODE_TYPE_META } from '@/types';
 import type { NodeType, FlowNodeData } from '@/types';
 
+export function shortId(id: string): string {
+  const last = id.split('-').pop() ?? id;
+  const stripped = last.replace(/^0+/, '');
+  return stripped || id.replace(/-/g, '').slice(0, 8);
+}
+
 interface NodeCardProps {
   id: string;
   data: FlowNodeData;
@@ -42,7 +48,7 @@ export const QuestionNode = memo(({ id, data, selected }: NodeCardProps) => (
         <NodeBadge type="question" />
         {data.badge && <span className="text-[9px] font-semibold text-orange-500 uppercase tracking-wider">{data.badge}</span>}
       </div>
-      <span className="text-[10px] text-[var(--color-text-muted)] font-mono">{id}</span>
+      <span className="text-[10px] text-[var(--color-text-muted)] font-mono">#{shortId(id)}</span>
     </div>
     <div className="px-3 py-2.5">
       <p className="text-xs font-semibold text-[var(--color-text-primary)] mb-2 leading-snug">{data.questionText || data.label}</p>
@@ -74,7 +80,7 @@ export const InfoNode = memo(({ id, data, selected }: NodeCardProps) => (
     <Handle type="target" position={Position.Left} id="target" className="!left-[-6px]" />
     <div className="flex items-center justify-between px-3 pt-2.5 pb-1.5 border-b border-[var(--color-border)]">
       <NodeBadge type="info" />
-      <span className="text-[10px] text-[var(--color-text-muted)] font-mono">{id}</span>
+      <span className="text-[10px] text-[var(--color-text-muted)] font-mono">#{shortId(id)}</span>
     </div>
     <div className="px-3 py-2.5">
       <p className="text-xs font-semibold text-[var(--color-text-primary)] mb-1.5">{data.label}</p>
@@ -94,7 +100,7 @@ export const OfferNode = memo(({ id, data, selected }: NodeCardProps) => {
       <Handle type="target" position={Position.Left} id="target" className="!left-[-6px]" />
       <div className="flex items-center justify-between px-3 pt-2.5 pb-1.5 border-b border-[var(--color-border)]">
         <NodeBadge type="offer" />
-        <span className="text-[10px] text-[var(--color-text-muted)] font-mono">{id}</span>
+        <span className="text-[10px] text-[var(--color-text-muted)] font-mono">#{shortId(id)}</span>
       </div>
       <div className="px-3 py-2.5">
         <p className="text-xs font-semibold text-[var(--color-text-primary)] mb-1">{data.offerTitle || data.label}</p>
@@ -118,7 +124,7 @@ export const ResultNode = memo(({ id, data, selected }: NodeCardProps) => (
     <Handle type="target" position={Position.Left} id="target" className="!left-[-6px]" />
     <div className="flex items-center justify-between px-3 pt-2.5 pb-1.5 border-b border-[var(--color-border)]">
       <NodeBadge type="result" />
-      <span className="text-[10px] text-[var(--color-text-muted)] font-mono">{id}</span>
+      <span className="text-[10px] text-[var(--color-text-muted)] font-mono">#{shortId(id)}</span>
     </div>
     <div className="px-3 py-2.5">
       <p className="text-xs font-semibold text-[var(--color-text-primary)] mb-1">{data.label}</p>
@@ -136,7 +142,7 @@ export const ConditionalNode = memo(({ id, data, selected }: NodeCardProps) => (
     <Handle type="target" position={Position.Left} id="target" className="!left-[-6px]" />
     <div className="flex items-center justify-between px-3 pt-2.5 pb-1.5 border-b border-[var(--color-border)]">
       <NodeBadge type="conditional" />
-      <span className="text-[10px] text-[var(--color-text-muted)] font-mono">{id}</span>
+      <span className="text-[10px] text-[var(--color-text-muted)] font-mono">#{shortId(id)}</span>
     </div>
     <div className="px-3 py-2.5">
       <p className="text-xs font-semibold text-[var(--color-text-primary)] mb-1">{data.label}</p>
@@ -157,7 +163,7 @@ export const DelayNode = memo(({ id, data, selected }: NodeCardProps) => (
     <Handle type="target" position={Position.Left} id="target" className="!left-[-6px]" />
     <div className="flex items-center justify-between px-3 pt-2.5 pb-1.5 border-b border-[var(--color-border)]">
       <NodeBadge type="delay" />
-      <span className="text-[10px] text-[var(--color-text-muted)] font-mono">{id}</span>
+      <span className="text-[10px] text-[var(--color-text-muted)] font-mono">#{shortId(id)}</span>
     </div>
     <div className="px-3 py-2.5">
       <p className="text-xs font-semibold text-[var(--color-text-primary)]">{data.label}</p>

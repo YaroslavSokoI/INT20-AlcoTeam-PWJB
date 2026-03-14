@@ -10,6 +10,9 @@ export interface FlowStore {
   past: Array<{ nodes: FlowNode[]; edges: FlowEdge[] }>;
   future: Array<{ nodes: FlowNode[]; edges: FlowEdge[] }>;
 
+  isLoading: boolean;
+  loadFlow: () => Promise<void>;
+
   addNode: (type: NodeType, position?: { x: number; y: number }) => void;
   updateNodeData: (id: string, data: Partial<FlowNodeData>) => void;
   deleteNode: (id: string) => void;
