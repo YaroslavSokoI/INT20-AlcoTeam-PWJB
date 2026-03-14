@@ -24,6 +24,12 @@ export function QuizContainer() {
     }
   }, [hasHistory, goBack, goToWelcome]);
 
+  useEffect(() => {
+    if (currentNode?.type === 'offer') {
+      submitAnswer(null);
+    }
+  }, [currentNode?.id]);
+
   if (stage === 'loading') {
     return <LoadingSpinner />;
   }

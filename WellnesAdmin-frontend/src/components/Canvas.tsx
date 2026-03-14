@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import {
   ReactFlow, Background, BackgroundVariant,
   useReactFlow, ConnectionLineType,
@@ -10,6 +10,7 @@ import { QuestionNode, InfoNode, OfferNode, ResultNode, ConditionalNode, DelayNo
 import { LabeledEdge } from '@/components/edges/LabeledEdge';
 import { GraphControls } from '@/components/GraphControls';
 import { useFlowStore } from '@/store/flowStore';
+import { getAutoLayout } from '@/lib/layout';
 import type { FlowNode, FlowEdge, NodeType } from '@/types';
 import { useIsMobile } from '@/hooks/useResponsive';
 
@@ -17,9 +18,18 @@ const nodeTypes = { question: QuestionNode, info: InfoNode, offer: OfferNode, re
 const edgeTypes = { labeled: LabeledEdge };
 
 export function Canvas() {
-  const { nodes, edges, setSelectedNodeId, addNode, addEdge, setFlowNodes, setFlowEdges, deleteNode, deleteEdge, undo, redo } = useFlowStore();
-  const { screenToFlowPosition } = useReactFlow();
+  const { nodes, edges, isLoading, setSelectedNodeId, addNode, addEdge, setFlowNodes, setFlowEdges, deleteNode, deleteEdge, undo, redo } = useFlowStore();
+  const { screenToFlowPosition, fitView } = useReactFlow();
   const isMobile = useIsMobile();
+  const autoLayoutDone = useRef(false);
+
+  useEffect(() => {
+    if (isLoading || nodes.length === 0 || autoLayoutDone.current) return;
+    autoLayoutDone.current = true;
+    const laid = getAutoLayout(nodes, edges);
+    setFlowNodes(laid);
+    setTimeout(() => fitView({ padding: 0.15, duration: 400 }), 300);
+  }, [isLoading, nodes.length]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

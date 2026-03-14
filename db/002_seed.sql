@@ -1,176 +1,358 @@
 -- ============================================================
--- SEED: BetterMe quiz DAG + offer catalog
+-- SEED v3: BetterMe full wellness quiz DAG + offer catalog
+--
+-- Graph flow:
+--   Q1(goal) → Q2(level) → Q3(age) → Q4(gender) → Q5(context)
+--   → branch:
+--       weight_loss+home    → Q6a(time_available)
+--       strength/wl+gym     → Q6b(injuries)
+--       endurance+outdoor   → Q6c(run_level)
+--       flexibility         → INFO_flex → Q6d(flex_pref)
+--       stress_relief/other → skip to universal
+--   → Q7(barrier) → Q8(stress) → Q9(sleep) → Q10(energy)
+--   → INFO "plan ready" (node 15)
+--   → [conditional routing] → OFFER node (16–22)  ← terminal
+--
+-- Offer nodes are auto-advanced in the user app:
+--   session completes → offer fetched from offers table → shown
 -- ============================================================
 
--- ---- NODES -------------------------------------------------
+-- ---- QUESTION / INFO NODES ---------------------------------
 
--- Q1: Main goal (START)
+-- 1. Main goal (START)
 INSERT INTO nodes (id, type, title, description, question_type, options, attribute_key, pos_x, pos_y, is_start)
 VALUES (
   '00000000-0000-0000-0000-000000000001',
   'question',
   'What is your main wellness goal?',
-  'We''ll build a program tailored specifically to what you want to achieve.',
+  'We''ll build a program tailored to exactly what you want to achieve.',
   'single_choice',
   '[
-    {"value":"weight_loss",  "label":"Lose Weight",      "icon":"🔥"},
-    {"value":"strength",     "label":"Build Strength",   "icon":"💪"},
-    {"value":"flexibility",  "label":"Get Flexible",     "icon":"🧘"},
-    {"value":"stress_relief","label":"Reduce Stress",    "icon":"🌿"},
-    {"value":"endurance",    "label":"Boost Endurance",  "icon":"🏃"}
+    {"value":"weight_loss",  "label":"Lose Weight",    "icon":"🔥"},
+    {"value":"strength",     "label":"Build Strength", "icon":"💪"},
+    {"value":"flexibility",  "label":"Get Flexible",   "icon":"🧘"},
+    {"value":"stress_relief","label":"Reduce Stress",  "icon":"🌿"},
+    {"value":"endurance",    "label":"Boost Endurance","icon":"🏃"}
   ]',
-  'goal',
-  100, 100,
-  TRUE
+  'goal', 0, 0, TRUE
 );
 
--- Q2: Workout location
+-- 2. Fitness level
 INSERT INTO nodes (id, type, title, description, question_type, options, attribute_key, pos_x, pos_y)
 VALUES (
   '00000000-0000-0000-0000-000000000002',
   'question',
+  'How would you describe your current fitness level?',
+  'Be honest — there are no wrong answers. We''ll calibrate the right intensity for you.',
+  'single_choice',
+  '[
+    {"value":"beginner",    "label":"Beginner — just starting out",        "icon":"🌱"},
+    {"value":"intermediate","label":"Intermediate — work out occasionally","icon":"⚡"},
+    {"value":"advanced",    "label":"Advanced — train regularly",          "icon":"🚀"}
+  ]',
+  'level', 0, 200
+);
+
+-- 3. Age range
+INSERT INTO nodes (id, type, title, description, question_type, options, attribute_key, pos_x, pos_y)
+VALUES (
+  '00000000-0000-0000-0000-000000000003',
+  'question',
+  'What is your age range?',
+  'Age helps us fine-tune intensity, recovery time, and program length.',
+  'single_choice',
+  '[
+    {"value":"under_25","label":"Under 25","icon":"🌱"},
+    {"value":"25_35",   "label":"25–35",   "icon":"⚡"},
+    {"value":"36_50",   "label":"36–50",   "icon":"🎯"},
+    {"value":"over_50", "label":"50+",     "icon":"🌟"}
+  ]',
+  'age', 0, 400
+);
+
+-- 4. Gender
+INSERT INTO nodes (id, type, title, description, question_type, options, attribute_key, pos_x, pos_y)
+VALUES (
+  '00000000-0000-0000-0000-000000000004',
+  'question',
+  'What is your gender?',
+  'Programs can be optimised differently. You can always select "Prefer not to say".',
+  'single_choice',
+  '[
+    {"value":"male",             "label":"Male",              "icon":"👨"},
+    {"value":"female",           "label":"Female",            "icon":"👩"},
+    {"value":"non_binary",       "label":"Non-binary",        "icon":"🧑"},
+    {"value":"prefer_not_to_say","label":"Prefer not to say", "icon":"🔒"}
+  ]',
+  'gender', 0, 600
+);
+
+-- 5. Workout context / location
+INSERT INTO nodes (id, type, title, description, question_type, options, attribute_key, pos_x, pos_y)
+VALUES (
+  '00000000-0000-0000-0000-000000000005',
+  'question',
   'Where do you prefer to work out?',
-  'Your environment shapes your program.',
+  'Your environment shapes your program — equipment, space, and schedule all matter.',
   'single_choice',
   '[
     {"value":"home",   "label":"At Home",   "icon":"🏠"},
     {"value":"gym",    "label":"At the Gym","icon":"🏋️"},
     {"value":"outdoor","label":"Outdoors",  "icon":"🌳"}
   ]',
-  'context',
-  100, 250
+  'context', 0, 800
 );
 
--- Q3: Fitness level
-INSERT INTO nodes (id, type, title, description, question_type, options, attribute_key, pos_x, pos_y)
-VALUES (
-  '00000000-0000-0000-0000-000000000003',
-  'question',
-  'How would you describe your current fitness level?',
-  'Be honest — there are no wrong answers!',
-  'single_choice',
-  '[
-    {"value":"beginner",    "label":"Beginner — just starting out",   "icon":"🌱"},
-    {"value":"intermediate","label":"Intermediate — workout sometimes","icon":"⚡"},
-    {"value":"advanced",    "label":"Advanced — train regularly",      "icon":"🚀"}
-  ]',
-  'level',
-  100, 400
-);
-
--- Q4a: Time available (branch: weight_loss + home)
-INSERT INTO nodes (id, type, title, description, question_type, options, attribute_key, pos_x, pos_y)
-VALUES (
-  '00000000-0000-0000-0000-000000000004',
-  'question',
-  'How much time can you dedicate per day?',
-  'We''ll match the intensity to your schedule.',
-  'single_choice',
-  '[
-    {"value":"10-15","label":"10–15 minutes","icon":"⚡"},
-    {"value":"20-30","label":"20–30 minutes","icon":"🕐"},
-    {"value":"45+",  "label":"45+ minutes",  "icon":"💥"}
-  ]',
-  'time_available',
-  -200, 580
-);
-
--- Q4b: Injuries (branch: strength + gym)
-INSERT INTO nodes (id, type, title, description, question_type, options, attribute_key, pos_x, pos_y)
-VALUES (
-  '00000000-0000-0000-0000-000000000005',
-  'question',
-  'Do you have any injuries or physical limitations?',
-  'We want to make sure your plan is safe and effective.',
-  'single_choice',
-  '[
-    {"value":"none",      "label":"No injuries",          "icon":"✅"},
-    {"value":"knee",      "label":"Knee issues",          "icon":"🦵"},
-    {"value":"back",      "label":"Back/spine issues",    "icon":"🔙"},
-    {"value":"shoulder",  "label":"Shoulder issues",      "icon":"💪"}
-  ]',
-  'injuries',
-  100, 580
-);
-
--- Q4c: Running experience (branch: endurance + outdoor)
+-- 6a. Time available (branch: weight_loss + home)
 INSERT INTO nodes (id, type, title, description, question_type, options, attribute_key, pos_x, pos_y)
 VALUES (
   '00000000-0000-0000-0000-000000000006',
   'question',
-  'What''s your running experience?',
-  'We''ll calibrate the right starting point for your 5K journey.',
+  'How much time can you dedicate to training each day?',
+  'We''ll match the intensity and volume to fit your available schedule.',
   'single_choice',
   '[
-    {"value":"never",     "label":"Never run before",       "icon":"🐢"},
-    {"value":"occasional","label":"Run occasionally",       "icon":"🚶"},
-    {"value":"regular",   "label":"Run regularly",          "icon":"🏃"}
+    {"value":"10_15",  "label":"10–15 minutes","icon":"⚡"},
+    {"value":"20_30",  "label":"20–30 minutes","icon":"🕐"},
+    {"value":"45_plus","label":"45+ minutes",  "icon":"💥"}
   ]',
-  'run_level',
-  400, 580
+  'time_available', -500, 1050
 );
 
--- INFO: Motivational page (branch: flexibility)
+-- 6b. Injuries / limitations (branch: strength or weight_loss + gym)
 INSERT INTO nodes (id, type, title, description, question_type, options, attribute_key, pos_x, pos_y)
 VALUES (
   '00000000-0000-0000-0000-000000000007',
-  'info',
-  'Flexibility is the foundation of a healthy body 🧘',
-  'People who improve mobility report 40% less pain and significantly better posture within 4 weeks. You''re making a great choice.',
-  NULL, NULL, NULL,
-  -400, 580
+  'question',
+  'Do you have any injuries or physical limitations?',
+  'We want to make sure your plan is safe, effective, and built around your body.',
+  'single_choice',
+  '[
+    {"value":"none",    "label":"No injuries",         "icon":"✅"},
+    {"value":"knee",    "label":"Knee issues",         "icon":"🦵"},
+    {"value":"back",    "label":"Back / spine issues", "icon":"🔙"},
+    {"value":"shoulder","label":"Shoulder issues",     "icon":"💪"}
+  ]',
+  'injuries', 0, 1050
 );
 
--- Q Universal: Stress level interceptor (all paths converge here before end)
+-- 6c. Running experience (branch: endurance + outdoor)
 INSERT INTO nodes (id, type, title, description, question_type, options, attribute_key, pos_x, pos_y)
 VALUES (
   '00000000-0000-0000-0000-000000000008',
   'question',
-  'How would you rate your current stress level?',
-  'Stress management is a key part of any wellness journey.',
+  'What''s your running experience?',
+  'We''ll calibrate the right starting point for your endurance journey.',
   'single_choice',
   '[
-    {"value":"low",   "label":"Low — I feel calm",       "icon":"😊"},
-    {"value":"medium","label":"Medium — some tension",   "icon":"😐"},
-    {"value":"high",  "label":"High — I feel overwhelmed","icon":"😰"}
+    {"value":"never",     "label":"Never run before", "icon":"🐢"},
+    {"value":"occasional","label":"Run occasionally", "icon":"🚶"},
+    {"value":"regular",   "label":"Run regularly",    "icon":"🏃"}
   ]',
-  'stress_level',
-  100, 750
+  'run_level', 500, 1050
 );
 
--- Q Universal: Sleep quality
+-- INFO: Flexibility motivation (branch: flexibility goal)
 INSERT INTO nodes (id, type, title, description, question_type, options, attribute_key, pos_x, pos_y)
 VALUES (
   '00000000-0000-0000-0000-000000000009',
+  'info',
+  'Flexibility is the foundation of a healthy body 🧘',
+  'People who improve mobility report 40% less pain and significantly better posture within just 4 weeks. Small, consistent daily sessions make a huge difference.',
+  NULL, NULL, NULL,
+  -1000, 1050
+);
+
+-- 6d. Flexibility format preference (branch: flexibility, after info)
+INSERT INTO nodes (id, type, title, description, question_type, options, attribute_key, pos_x, pos_y)
+VALUES (
+  '00000000-0000-0000-0000-000000000010',
   'question',
-  'How is your sleep quality lately?',
-  'Sleep recovery directly impacts your fitness results.',
+  'What type of flexibility training appeals to you?',
+  'We''ll design your daily routine around the style you''ll actually enjoy and stick to.',
   'single_choice',
   '[
-    {"value":"good",  "label":"Good — 7-8h, feel rested","icon":"😴"},
-    {"value":"fair",  "label":"Fair — could be better",  "icon":"🌙"},
-    {"value":"poor",  "label":"Poor — often exhausted",  "icon":"😵"}
+    {"value":"yoga",      "label":"Yoga flows",                "icon":"🧘"},
+    {"value":"stretching","label":"Deep stretching / mobility","icon":"🤸"},
+    {"value":"pilates",   "label":"Pilates",                   "icon":"🏋️"}
   ]',
-  'sleep_quality',
-  100, 900
+  'flex_pref', -1000, 1250
+);
+
+-- 7. Main barrier (universal convergence)
+INSERT INTO nodes (id, type, title, description, question_type, options, attribute_key, pos_x, pos_y)
+VALUES (
+  '00000000-0000-0000-0000-000000000011',
+  'question',
+  'What''s the biggest thing getting in the way of your wellness goals?',
+  'Understanding your barriers helps us build a realistic plan that actually fits your life.',
+  'single_choice',
+  '[
+    {"value":"time_lack",     "label":"Not enough time",                        "icon":"⏰"},
+    {"value":"low_motivation","label":"Lack of motivation or discipline",        "icon":"😔"},
+    {"value":"stress_fatigue","label":"Stress and fatigue",                      "icon":"😰"},
+    {"value":"no_guidance",   "label":"No guidance — don''t know where to start","icon":"🤷"},
+    {"value":"nothing",       "label":"Nothing — I''m ready to go!",            "icon":"🚀"}
+  ]',
+  'barrier', 0, 1450
+);
+
+-- 8. Stress level (universal)
+INSERT INTO nodes (id, type, title, description, question_type, options, attribute_key, pos_x, pos_y)
+VALUES (
+  '00000000-0000-0000-0000-000000000012',
+  'question',
+  'How would you rate your current stress level?',
+  'Stress is the hidden blocker of most wellness journeys. Knowing your level helps us support your recovery properly.',
+  'single_choice',
+  '[
+    {"value":"low",   "label":"Low — I feel calm and balanced",  "icon":"😊"},
+    {"value":"medium","label":"Medium — some tension day-to-day","icon":"😐"},
+    {"value":"high",  "label":"High — I often feel overwhelmed", "icon":"😰"}
+  ]',
+  'stress_level', 0, 1650
+);
+
+-- 9. Sleep quality (universal)
+INSERT INTO nodes (id, type, title, description, question_type, options, attribute_key, pos_x, pos_y)
+VALUES (
+  '00000000-0000-0000-0000-000000000013',
+  'question',
+  'How is your sleep quality lately?',
+  'Sleep is where real recovery happens. It directly impacts your results, mood, and energy.',
+  'single_choice',
+  '[
+    {"value":"good","label":"Good — 7–8h, I wake up rested",        "icon":"😴"},
+    {"value":"fair","label":"Fair — inconsistent, could be better", "icon":"🌙"},
+    {"value":"poor","label":"Poor — I often wake up tired",         "icon":"😵"}
+  ]',
+  'sleep_quality', 0, 1850
+);
+
+-- 10. Energy level (universal)
+INSERT INTO nodes (id, type, title, description, question_type, options, attribute_key, pos_x, pos_y)
+VALUES (
+  '00000000-0000-0000-0000-000000000014',
+  'question',
+  'How would you describe your typical daily energy levels?',
+  'We''ll match your program intensity to your real-life energy capacity so you actually finish sessions.',
+  'single_choice',
+  '[
+    {"value":"high",  "label":"High — energized most of the day","icon":"⚡"},
+    {"value":"medium","label":"Medium — ups and downs",          "icon":"🔋"},
+    {"value":"low",   "label":"Low — I often feel drained",      "icon":"🪫"}
+  ]',
+  'energy_level', 0, 2050
+);
+
+-- 15. INFO: Plan ready (transition — routes to offer nodes)
+INSERT INTO nodes (id, type, title, description, question_type, options, attribute_key, pos_x, pos_y)
+VALUES (
+  '00000000-0000-0000-0000-000000000015',
+  'info',
+  'Your personalized wellness plan is ready! 🎉',
+  'Based on your answers, we''ve crafted a program that matches your lifestyle, goals, schedule, and current wellbeing. Thousands of people with your exact profile have already transformed their health.',
+  NULL, NULL, NULL,
+  0, 2250
+);
+
+-- ---- OFFER NODES (terminal — no outgoing edges) ------------
+
+-- 16. OFFER: Weight Loss Starter (home, 20-30+ min)
+INSERT INTO nodes (id, type, title, description, question_type, options, attribute_key, pos_x, pos_y)
+VALUES (
+  '00000000-0000-0000-0000-000000000016',
+  'offer',
+  'Weight Loss Starter',
+  '4-week home fat-burn program — 20–30 min daily, no equipment',
+  NULL, NULL, 'weight-loss-starter',
+  -900, 2500
+);
+
+-- 17. OFFER: Quick Fit Micro-Workouts (home, 10-15 min)
+INSERT INTO nodes (id, type, title, description, question_type, options, attribute_key, pos_x, pos_y)
+VALUES (
+  '00000000-0000-0000-0000-000000000017',
+  'offer',
+  'Quick Fit Micro-Workouts',
+  '10–15 min daily HIIT micro-workouts — proven fat loss for busy people',
+  NULL, NULL, 'quick-fit-micro',
+  -600, 2500
+);
+
+-- 18. OFFER: Lean Strength Builder (gym, no injuries)
+INSERT INTO nodes (id, type, title, description, question_type, options, attribute_key, pos_x, pos_y)
+VALUES (
+  '00000000-0000-0000-0000-000000000018',
+  'offer',
+  'Lean Strength Builder',
+  'Progressive 6-week gym strength program — compound lifts + hypertrophy',
+  NULL, NULL, 'lean-strength-builder',
+  -300, 2500
+);
+
+-- 19. OFFER: Low-Impact Fat Burn (gym, with injuries)
+INSERT INTO nodes (id, type, title, description, question_type, options, attribute_key, pos_x, pos_y)
+VALUES (
+  '00000000-0000-0000-0000-000000000019',
+  'offer',
+  'Low-Impact Fat Burn',
+  'Joint-friendly program for knee, back, and shoulder issues',
+  NULL, NULL, 'low-impact-fat-burn',
+  0, 2500
+);
+
+-- 20. OFFER: Run Your First 5K (outdoor)
+INSERT INTO nodes (id, type, title, description, question_type, options, attribute_key, pos_x, pos_y)
+VALUES (
+  '00000000-0000-0000-0000-000000000020',
+  'offer',
+  'Run Your First 5K',
+  '8-week Couch-to-5K outdoor running program — 3 sessions/week',
+  NULL, NULL, 'run-first-5k',
+  300, 2500
+);
+
+-- 21. OFFER: Yoga & Mobility (flexibility)
+INSERT INTO nodes (id, type, title, description, question_type, options, attribute_key, pos_x, pos_y)
+VALUES (
+  '00000000-0000-0000-0000-000000000021',
+  'offer',
+  'Yoga & Mobility Program',
+  'Daily 10–25 min yoga and mobility sessions — flexibility and posture',
+  NULL, NULL, 'yoga-mobility',
+  600, 2500
+);
+
+-- 22. OFFER: Stress Reset Program (stress_relief)
+INSERT INTO nodes (id, type, title, description, question_type, options, attribute_key, pos_x, pos_y)
+VALUES (
+  '00000000-0000-0000-0000-000000000022',
+  'offer',
+  'Stress Reset Program',
+  '4-week mental reset — breathwork, meditation, and anti-stress routines',
+  NULL, NULL, 'stress-reset',
+  900, 2500
 );
 
 
 -- ---- EDGES -------------------------------------------------
 
--- Q1 (goal) → Q2 (context) — unconditional
+-- Main linear path: Q1 → Q2 → Q3 → Q4 → Q5
 INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002', NULL, NULL, 0);
-
--- Q2 (context) → Q3 (level) — unconditional
+VALUES ('00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002',NULL,NULL,0);
 INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES ('00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000003', NULL, NULL, 0);
+VALUES ('00000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000003',NULL,NULL,0);
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000004',NULL,NULL,0);
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000004','00000000-0000-0000-0000-000000000005',NULL,NULL,0);
 
--- Q3 → Q4a: weight_loss + home
+-- Q5 → Q6a: weight_loss + home
 INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
 VALUES (
-  '00000000-0000-0000-0000-000000000003',
-  '00000000-0000-0000-0000-000000000004',
+  '00000000-0000-0000-0000-000000000005',
+  '00000000-0000-0000-0000-000000000006',
   'Weight loss at home',
   '{"type":"compound","operator":"AND","conditions":[
     {"type":"simple","attribute":"goal","op":"eq","value":"weight_loss"},
@@ -179,11 +361,11 @@ VALUES (
   10
 );
 
--- Q3 → Q4b: strength + gym
+-- Q5 → Q6b: strength + gym
 INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
 VALUES (
-  '00000000-0000-0000-0000-000000000003',
   '00000000-0000-0000-0000-000000000005',
+  '00000000-0000-0000-0000-000000000007',
   'Strength at gym',
   '{"type":"compound","operator":"AND","conditions":[
     {"type":"simple","attribute":"goal","op":"eq","value":"strength"},
@@ -192,11 +374,24 @@ VALUES (
   10
 );
 
--- Q3 → Q4c: endurance + outdoor
+-- Q5 → Q6b: weight_loss + gym
 INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
 VALUES (
-  '00000000-0000-0000-0000-000000000003',
-  '00000000-0000-0000-0000-000000000006',
+  '00000000-0000-0000-0000-000000000005',
+  '00000000-0000-0000-0000-000000000007',
+  'Weight loss at gym',
+  '{"type":"compound","operator":"AND","conditions":[
+    {"type":"simple","attribute":"goal","op":"eq","value":"weight_loss"},
+    {"type":"simple","attribute":"context","op":"eq","value":"gym"}
+  ]}',
+  9
+);
+
+-- Q5 → Q6c: endurance + outdoor
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES (
+  '00000000-0000-0000-0000-000000000005',
+  '00000000-0000-0000-0000-000000000008',
   'Endurance outdoors',
   '{"type":"compound","operator":"AND","conditions":[
     {"type":"simple","attribute":"goal","op":"eq","value":"endurance"},
@@ -205,204 +400,346 @@ VALUES (
   10
 );
 
--- Q3 → INFO flexibility
+-- Q5 → INFO flex: flexibility
 INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
 VALUES (
-  '00000000-0000-0000-0000-000000000003',
-  '00000000-0000-0000-0000-000000000007',
+  '00000000-0000-0000-0000-000000000005',
+  '00000000-0000-0000-0000-000000000009',
   'Flexibility path',
   '{"type":"simple","attribute":"goal","op":"eq","value":"flexibility"}',
   10
 );
 
--- Q3 → stress interceptor: stress_relief (skip branching)
+-- Q5 → Q7: stress_relief (skip branching)
 INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
 VALUES (
-  '00000000-0000-0000-0000-000000000003',
-  '00000000-0000-0000-0000-000000000008',
+  '00000000-0000-0000-0000-000000000005',
+  '00000000-0000-0000-0000-000000000011',
   'Stress relief direct',
   '{"type":"simple","attribute":"goal","op":"eq","value":"stress_relief"}',
   10
 );
 
--- Q3 → stress interceptor: default fallback (weight_loss+gym, strength+home, etc.)
+-- Q5 → Q7: default fallback (strength+home, endurance+gym, etc.)
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000005','00000000-0000-0000-0000-000000000011','Default path',NULL,0);
+
+-- Branch exits → Q7 (universal convergence)
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000006','00000000-0000-0000-0000-000000000011',NULL,NULL,0);
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000007','00000000-0000-0000-0000-000000000011',NULL,NULL,0);
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000008','00000000-0000-0000-0000-000000000011',NULL,NULL,0);
+
+-- Flexibility info → Q6d
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000009','00000000-0000-0000-0000-000000000010',NULL,NULL,0);
+-- Q6d → Q7
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000010','00000000-0000-0000-0000-000000000011',NULL,NULL,0);
+
+-- Universal path: Q7 → Q8 → Q9 → Q10 → INFO(15)
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000011','00000000-0000-0000-0000-000000000012',NULL,NULL,0);
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000012','00000000-0000-0000-0000-000000000013',NULL,NULL,0);
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000013','00000000-0000-0000-0000-000000000014',NULL,NULL,0);
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000014','00000000-0000-0000-0000-000000000015',NULL,NULL,0);
+
+-- INFO(15) → OFFER nodes (conditional routing — highest priority match wins)
+
+-- → Quick Fit: weight_loss + home + 10-15 min  [priority 30]
 INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
 VALUES (
-  '00000000-0000-0000-0000-000000000003',
-  '00000000-0000-0000-0000-000000000008',
-  'Default path',
+  '00000000-0000-0000-0000-000000000015',
+  '00000000-0000-0000-0000-000000000017',
+  '→ Quick Fit Micro-Workouts',
+  '{"type":"compound","operator":"AND","conditions":[
+    {"type":"simple","attribute":"goal","op":"eq","value":"weight_loss"},
+    {"type":"simple","attribute":"context","op":"eq","value":"home"},
+    {"type":"simple","attribute":"time_available","op":"eq","value":"10_15"}
+  ]}',
+  30
+);
+
+-- → Weight Loss Starter: weight_loss + home + 20-30/45+ min  [priority 29]
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES (
+  '00000000-0000-0000-0000-000000000015',
+  '00000000-0000-0000-0000-000000000016',
+  '→ Weight Loss Starter',
+  '{"type":"compound","operator":"AND","conditions":[
+    {"type":"simple","attribute":"goal","op":"eq","value":"weight_loss"},
+    {"type":"simple","attribute":"context","op":"eq","value":"home"},
+    {"type":"simple","attribute":"time_available","op":"in","value":["20_30","45_plus"]}
+  ]}',
+  29
+);
+
+-- → Low-Impact Fat Burn: weight_loss + gym + injuries  [priority 28]
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES (
+  '00000000-0000-0000-0000-000000000015',
+  '00000000-0000-0000-0000-000000000019',
+  '→ Low-Impact Fat Burn',
+  '{"type":"compound","operator":"AND","conditions":[
+    {"type":"simple","attribute":"goal","op":"eq","value":"weight_loss"},
+    {"type":"simple","attribute":"context","op":"eq","value":"gym"},
+    {"type":"simple","attribute":"injuries","op":"in","value":["knee","back","shoulder"]}
+  ]}',
+  28
+);
+
+-- → Weight Loss Starter: weight_loss + gym + no injuries  [priority 27]
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES (
+  '00000000-0000-0000-0000-000000000015',
+  '00000000-0000-0000-0000-000000000016',
+  '→ Weight Loss Starter (gym)',
+  '{"type":"compound","operator":"AND","conditions":[
+    {"type":"simple","attribute":"goal","op":"eq","value":"weight_loss"},
+    {"type":"simple","attribute":"context","op":"eq","value":"gym"},
+    {"type":"simple","attribute":"injuries","op":"eq","value":"none"}
+  ]}',
+  27
+);
+
+-- → Lean Strength Builder: strength + gym + no injuries  [priority 28]
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES (
+  '00000000-0000-0000-0000-000000000015',
+  '00000000-0000-0000-0000-000000000018',
+  '→ Lean Strength Builder',
+  '{"type":"compound","operator":"AND","conditions":[
+    {"type":"simple","attribute":"goal","op":"eq","value":"strength"},
+    {"type":"simple","attribute":"context","op":"eq","value":"gym"},
+    {"type":"simple","attribute":"injuries","op":"eq","value":"none"}
+  ]}',
+  28
+);
+
+-- → Low-Impact Fat Burn: strength + gym + injuries  [priority 28]
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES (
+  '00000000-0000-0000-0000-000000000015',
+  '00000000-0000-0000-0000-000000000019',
+  '→ Low-Impact (strength + injuries)',
+  '{"type":"compound","operator":"AND","conditions":[
+    {"type":"simple","attribute":"goal","op":"eq","value":"strength"},
+    {"type":"simple","attribute":"context","op":"eq","value":"gym"},
+    {"type":"simple","attribute":"injuries","op":"in","value":["knee","back","shoulder"]}
+  ]}',
+  28
+);
+
+-- → Lean Strength Builder: strength fallback (home, outdoor, etc.)  [priority 10]
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES (
+  '00000000-0000-0000-0000-000000000015',
+  '00000000-0000-0000-0000-000000000018',
+  '→ Lean Strength Builder (fallback)',
+  '{"type":"simple","attribute":"goal","op":"eq","value":"strength"}',
+  10
+);
+
+-- → Run Your First 5K: endurance + outdoor  [priority 28]
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES (
+  '00000000-0000-0000-0000-000000000015',
+  '00000000-0000-0000-0000-000000000020',
+  '→ Run Your First 5K',
+  '{"type":"compound","operator":"AND","conditions":[
+    {"type":"simple","attribute":"goal","op":"eq","value":"endurance"},
+    {"type":"simple","attribute":"context","op":"eq","value":"outdoor"}
+  ]}',
+  28
+);
+
+-- → Run Your First 5K: endurance fallback  [priority 10]
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES (
+  '00000000-0000-0000-0000-000000000015',
+  '00000000-0000-0000-0000-000000000020',
+  '→ Run Your First 5K (fallback)',
+  '{"type":"simple","attribute":"goal","op":"eq","value":"endurance"}',
+  10
+);
+
+-- → Yoga & Mobility: flexibility  [priority 20]
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES (
+  '00000000-0000-0000-0000-000000000015',
+  '00000000-0000-0000-0000-000000000021',
+  '→ Yoga & Mobility',
+  '{"type":"simple","attribute":"goal","op":"eq","value":"flexibility"}',
+  20
+);
+
+-- → Stress Reset Program: stress_relief  [priority 20]
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES (
+  '00000000-0000-0000-0000-000000000015',
+  '00000000-0000-0000-0000-000000000022',
+  '→ Stress Reset Program',
+  '{"type":"simple","attribute":"goal","op":"eq","value":"stress_relief"}',
+  20
+);
+
+-- → Weight Loss Starter: default fallback  [priority 0]
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES (
+  '00000000-0000-0000-0000-000000000015',
+  '00000000-0000-0000-0000-000000000016',
+  '→ Default offer',
   NULL,
   0
 );
 
--- Q4a (time_available) → stress interceptor
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES ('00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000008', NULL, NULL, 0);
-
--- Q4b (injuries) → stress interceptor
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES ('00000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000008', NULL, NULL, 0);
-
--- Q4c (run_level) → stress interceptor
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES ('00000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000008', NULL, NULL, 0);
-
--- INFO flexibility → stress interceptor
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES ('00000000-0000-0000-0000-000000000007', '00000000-0000-0000-0000-000000000008', NULL, NULL, 0);
-
--- Stress interceptor → sleep quality
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES ('00000000-0000-0000-0000-000000000008', '00000000-0000-0000-0000-000000000009', NULL, NULL, 0);
-
--- Sleep quality → NULL (no outgoing edge = quiz complete)
+-- OFFER nodes 16–22 are terminal (no outgoing edges) —
+-- when reached, the session is marked complete and the
+-- offer is resolved from the offers table by the backend.
 
 
--- ---- OFFERS ------------------------------------------------
+-- ---- OFFERS TABLE ------------------------------------------
 
--- Offer 1: Weight Loss Starter (Home, 20-30 min)
+-- 1. Weight Loss Starter
 INSERT INTO offers (id, name, slug, description, digital_plan, physical_kit, why_text, cta_text, conditions, priority, is_addon)
 VALUES (
   '10000000-0000-0000-0000-000000000001',
   'Weight Loss Starter',
   'weight-loss-starter',
-  '4-week home fat-burn program with 20–30 min daily sessions',
-  'Structured 4-week progressive plan: cardio intervals + bodyweight circuits. No equipment needed. Daily 20–30 min sessions designed to maximize calorie burn at home.',
+  '4-week home fat-burn program — 20–30 min daily sessions, no equipment needed',
+  'Structured 4-week progressive plan: cardio intervals + bodyweight circuits. Daily 20–30 min sessions. Includes a nutrition guidance sheet and weekly progress tracker.',
   'Home Fat-Burn Kit: resistance bands, jump rope, shaker bottle, electrolytes + healthy snack',
-  'Based on your goal to lose weight at home with 20–30 minutes available daily, this plan gives you exactly the right intensity to see results without overcommitting.',
+  'Based on your goal to lose weight at home with 20–30 minutes daily, this plan delivers exactly the right intensity to see real results without overcommitting.',
   'Get My Weight Loss Plan',
   '{"type":"compound","operator":"AND","conditions":[
     {"type":"simple","attribute":"goal","op":"eq","value":"weight_loss"},
     {"type":"simple","attribute":"context","op":"eq","value":"home"},
-    {"type":"simple","attribute":"time_available","op":"in","value":["20-30","45+"]}
+    {"type":"simple","attribute":"time_available","op":"in","value":["20_30","45_plus"]}
   ]}',
-  100,
-  FALSE
+  100, FALSE
 );
 
--- Offer 2: Lean Strength Builder (Gym, no injuries)
+-- 2. Lean Strength Builder
 INSERT INTO offers (id, name, slug, description, digital_plan, physical_kit, why_text, cta_text, conditions, priority, is_addon)
 VALUES (
   '10000000-0000-0000-0000-000000000002',
   'Lean Strength Builder',
   'lean-strength-builder',
-  'Progressive gym strength program with muscle-building focus',
-  'Periodized 6-week strength program: compound lifts + hypertrophy work. 3–4 sessions/week. Includes progressive overload tracking.',
+  'Progressive gym strength program — 6 weeks, compound lifts + hypertrophy work',
+  'Periodized 6-week strength program: compound lifts + hypertrophy work. 3–4 sessions/week with progressive overload tracking. Includes a printable workout log and deload guidance.',
   'Gym Support Kit: wrist wraps/straps, mini loop band, compact towel, electrolytes/protein snack',
-  'With your gym access and no injuries holding you back, you''re in the perfect position to build serious strength with a smart progressive program.',
+  'With gym access and no injuries holding you back, you''re in the perfect position to build serious strength with a smart progressive program.',
   'Build My Strength Plan',
   '{"type":"compound","operator":"AND","conditions":[
     {"type":"simple","attribute":"goal","op":"eq","value":"strength"},
     {"type":"simple","attribute":"context","op":"eq","value":"gym"},
     {"type":"simple","attribute":"injuries","op":"eq","value":"none"}
   ]}',
-  100,
-  FALSE
+  100, FALSE
 );
 
--- Offer 3: Low-Impact Fat Burn (joint friendly)
+-- 3. Low-Impact Fat Burn
 INSERT INTO offers (id, name, slug, description, digital_plan, physical_kit, why_text, cta_text, conditions, priority, is_addon)
 VALUES (
   '10000000-0000-0000-0000-000000000003',
   'Low-Impact Fat Burn',
   'low-impact-fat-burn',
-  'Joint-friendly strength and fat-burn program — safe for knees and back',
-  '5-week low-impact program: swimming-inspired movements, resistance band work, and modified exercises that protect your joints while still delivering results.',
+  'Joint-friendly strength and fat-burn program — safe for knees, back, and shoulders',
+  '5-week low-impact program: resistance band work, modified exercises, and swimming-inspired movements. Protects your joints while still delivering measurable results.',
   'Joint-Friendly Kit: knee sleeve/brace, massage ball, mini loop bands, cooling patch/recovery gel',
-  'Given your joint limitations, we''ve designed a plan that protects your knees and back while still helping you reach your strength goals safely.',
+  'Given your physical limitations, we''ve designed a plan that protects your joints while still helping you reach your goals safely and effectively.',
   'Start My Joint-Safe Plan',
   '{"type":"compound","operator":"AND","conditions":[
-    {"type":"simple","attribute":"goal","op":"eq","value":"strength"},
+    {"type":"simple","attribute":"goal","op":"in","value":["strength","weight_loss"]},
     {"type":"simple","attribute":"context","op":"eq","value":"gym"},
     {"type":"simple","attribute":"injuries","op":"in","value":["knee","back","shoulder"]}
   ]}',
-  100,
-  FALSE
+  100, FALSE
 );
 
--- Offer 4: Run Your First 5K
+-- 4. Run Your First 5K
 INSERT INTO offers (id, name, slug, description, digital_plan, physical_kit, why_text, cta_text, conditions, priority, is_addon)
 VALUES (
   '10000000-0000-0000-0000-000000000004',
   'Run Your First 5K',
   'run-first-5k',
-  '8-week outdoor running program from couch to 5K',
-  '8-week Couch-to-5K program: 3 sessions/week with walk-run intervals that progressively build your endurance. GPS route suggestions and pacing guide included.',
+  '8-week outdoor Couch-to-5K running program — 3 sessions/week',
+  '8-week Couch-to-5K: 3 sessions/week with walk-run intervals. GPS route suggestions, pacing guide, and post-run recovery protocols included.',
   'Runner Starter Kit: electrolytes, reflective armband/safety light, blister prevention kit, running belt',
-  'Your outdoor environment and endurance goal make you the perfect candidate for our 5K program. Thousands of beginners have crossed the finish line with this exact plan.',
+  'Your outdoor preference and endurance goal make you the perfect candidate for our 5K program.',
   'Start My 5K Journey',
   '{"type":"compound","operator":"AND","conditions":[
     {"type":"simple","attribute":"goal","op":"eq","value":"endurance"},
     {"type":"simple","attribute":"context","op":"eq","value":"outdoor"}
   ]}',
-  100,
-  FALSE
+  100, FALSE
 );
 
--- Offer 5: Yoga & Mobility
+-- 5. Yoga & Mobility
 INSERT INTO offers (id, name, slug, description, digital_plan, physical_kit, why_text, cta_text, conditions, priority, is_addon)
 VALUES (
   '10000000-0000-0000-0000-000000000005',
   'Yoga & Mobility Program',
   'yoga-mobility',
-  'Daily 10–25 min yoga and mobility sessions for flexibility and posture',
-  '6-week progressive yoga + mobility program: morning flows, deep stretching sessions, and posture correction routines. 10–25 min daily.',
+  'Daily 10–25 min yoga and mobility sessions — flexibility, posture, and pain relief',
+  '6-week progressive yoga + mobility program: morning flows, deep stretching sessions, and posture correction routines. Adapts to all levels.',
   'Mobility Kit: travel yoga mat or yoga strap, massage ball, mini foam roller',
-  'Flexibility training is one of the most underrated investments in your body. This program will have you moving pain-free and feeling lighter within weeks.',
+  'Flexibility training is one of the most underrated investments in your body. This program will have you moving pain-free within weeks.',
   'Start My Flexibility Journey',
   '{"type":"simple","attribute":"goal","op":"eq","value":"flexibility"}',
-  100,
-  FALSE
+  100, FALSE
 );
 
--- Offer 6: Stress Reset Program (primary — for stress_relief goal)
+-- 6. Stress Reset Program
 INSERT INTO offers (id, name, slug, description, digital_plan, physical_kit, why_text, cta_text, conditions, priority, is_addon)
 VALUES (
   '10000000-0000-0000-0000-000000000006',
   'Stress Reset Program',
   'stress-reset',
-  'Mental reset + micro-habits: breathing, meditation, and anti-stress routines',
+  '4-week mental reset — breathwork, meditation, and anti-stress daily routines',
   '4-week stress reset: daily 10-min breathwork sessions, guided meditations, sleep optimization routines, and mood-tracking micro-habits.',
   'Calm-Now Kit: eye mask, aroma roll-on/mini candle, herbal tea sticks, stress ball/fidget, quick reset card',
-  'Chronic stress is the hidden blocker of every wellness goal. This program gives you the tools to reset your nervous system and build lasting calm.',
+  'Chronic stress is the hidden blocker of every wellness goal. This program gives you science-backed tools to reset your nervous system.',
   'Reset My Stress Today',
   '{"type":"simple","attribute":"goal","op":"eq","value":"stress_relief"}',
-  100,
-  FALSE
+  100, FALSE
 );
 
--- Offer 6 addon: Stress Reset (addon for high stress — added to any primary offer)
-INSERT INTO offers (id, name, slug, description, digital_plan, physical_kit, why_text, cta_text, conditions, priority, is_addon)
-VALUES (
-  '10000000-0000-0000-0000-000000000016',
-  'Stress Reset Add-on',
-  'stress-reset-addon',
-  'Stress management module to complement your main program',
-  'Bonus: 2-week stress reduction module included with your plan. Daily 5-min breathwork and wind-down routines.',
-  'Calm-Now Kit: eye mask, aroma roll-on/mini candle, herbal tea sticks, stress ball',
-  'We noticed you''re dealing with high stress. We''ve added our Stress Reset module to your plan — because managing stress is the #1 multiplier for any fitness goal.',
-  'Add Stress Relief Module',
-  '{"type":"simple","attribute":"stress_level","op":"eq","value":"high"}',
-  50,
-  TRUE
-);
-
--- Offer 7: Quick Fit Micro-Workouts (weight_loss + home + 10-15 min)
+-- 7. Quick Fit Micro-Workouts
 INSERT INTO offers (id, name, slug, description, digital_plan, physical_kit, why_text, cta_text, conditions, priority, is_addon)
 VALUES (
   '10000000-0000-0000-0000-000000000007',
   'Quick Fit Micro-Workouts',
   'quick-fit-micro',
-  '10–15 min daily micro-workouts for busy people who want to lose weight at home',
-  '30-day micro-workout challenge: science-backed HIIT circuits that fit in 10–15 minutes. Proven to be as effective as 30-min traditional workouts when done consistently.',
+  '10–15 min daily HIIT micro-workouts — proven fat loss for busy people',
+  '30-day micro-workout challenge: science-backed HIIT circuits that fit in 10–15 minutes. Includes a daily progress calendar.',
   'Micro-Workout Kit: slider discs, mini loop bands, shaker/water bottle, mini routine card',
-  'With only 10–15 minutes a day, you can still achieve real fat loss results — science backs this up. Your plan is designed to make every minute count.',
+  'With only 10–15 minutes a day, you can still achieve real fat loss results. Your plan is designed to make every single minute count.',
   'Start My Quick Fit Plan',
   '{"type":"compound","operator":"AND","conditions":[
     {"type":"simple","attribute":"goal","op":"eq","value":"weight_loss"},
     {"type":"simple","attribute":"context","op":"eq","value":"home"},
-    {"type":"simple","attribute":"time_available","op":"eq","value":"10-15"}
+    {"type":"simple","attribute":"time_available","op":"eq","value":"10_15"}
   ]}',
-  110,
-  FALSE
+  110, FALSE
+);
+
+-- Stress Reset Add-on (appended to any primary offer when stress is high)
+INSERT INTO offers (id, name, slug, description, digital_plan, physical_kit, why_text, cta_text, conditions, priority, is_addon)
+VALUES (
+  '10000000-0000-0000-0000-000000000016',
+  'Stress Reset Add-on',
+  'stress-reset-addon',
+  'Stress management module — complements any primary wellness program',
+  'Bonus 2-week stress reduction module: daily 5-min breathwork and wind-down routines integrated into your main plan.',
+  'Calm-Now Kit: eye mask, aroma roll-on/mini candle, herbal tea sticks, stress ball',
+  'We noticed you''re dealing with high stress. We''ve added our Stress Reset module — managing stress is the #1 multiplier for any fitness goal.',
+  'Add Stress Relief Module',
+  '{"type":"simple","attribute":"stress_level","op":"eq","value":"high"}',
+  50, TRUE
 );
