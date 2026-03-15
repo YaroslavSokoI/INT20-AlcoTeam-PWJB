@@ -95,7 +95,7 @@ interface NodeInspectorProps {
 
 const LANGS = [
   { code: 'en', label: 'EN' },
-  { code: 'uk', label: 'UK' },
+  { code: 'ua', label: 'UA' },
 ] as const;
 
 function NodeInspector({ nodeId, initialData, onClose, isMobile }: NodeInspectorProps) {

@@ -1,11 +1,19 @@
 -- ============================================================
--- SEED v4: BetterMe full wellness quiz DAG + offer catalog
--- Uses split tables: nodes (base) + type-specific tables
+-- SEED v5: Wellness quiz — diverse, branching DAG
+--
+-- Structure per user path:
+--   4 universal start Qs → info tip → 2 goal-specific Qs
+--   → 5 universal end Qs → info "plan ready" → conditional tree → offer
+--
+-- Total unique question nodes: 19  (user sees 11 per path)
+-- Branching: after Q4 based on goal; offer tree based on all attributes
 -- ============================================================
 
--- ---- QUESTION NODES ----------------------------------------
+-- ============================================================
+-- PHASE 1: UNIVERSAL START (everyone)
+-- ============================================================
 
--- 1. Main goal (START)
+-- Q1: Main wellness goal (START)
 INSERT INTO nodes (id, type, pos_x, pos_y, is_start)
 VALUES ('00000000-0000-0000-0000-000000000001','question',0,0,TRUE);
 INSERT INTO question_nodes (node_id, title, question_type, options, attribute_key)
@@ -14,348 +22,500 @@ VALUES (
   'What is your main wellness goal?',
   'single_choice',
   '[
-    {"value":"weight_loss",  "label":"Lose Weight",    "icon":"🔥"},
-    {"value":"strength",     "label":"Build Strength", "icon":"💪"},
-    {"value":"flexibility",  "label":"Get Flexible",   "icon":"🧘"},
-    {"value":"stress_relief","label":"Reduce Stress",  "icon":"🌿"},
-    {"value":"endurance",    "label":"Boost Endurance","icon":"🏃"}
+    {"value":"weight_loss",   "label":"Lose Weight",     "icon":"scale"},
+    {"value":"strength",      "label":"Build Strength",  "icon":"dumbbell"},
+    {"value":"flexibility",   "label":"Get Flexible",    "icon":"stretch"},
+    {"value":"stress_relief", "label":"Reduce Stress",   "icon":"leaf"},
+    {"value":"endurance",     "label":"Boost Endurance", "icon":"runner"}
   ]',
   'goal'
 );
 
--- 2. Fitness level
+-- Q2: Age range
 INSERT INTO nodes (id, type, pos_x, pos_y)
 VALUES ('00000000-0000-0000-0000-000000000002','question',0,200);
 INSERT INTO question_nodes (node_id, title, question_type, options, attribute_key)
 VALUES (
   '00000000-0000-0000-0000-000000000002',
-  'How would you describe your current fitness level?',
+  'What is your age range?',
   'single_choice',
   '[
-    {"value":"beginner",    "label":"Beginner — just starting out",        "icon":"🌱"},
-    {"value":"intermediate","label":"Intermediate — work out occasionally","icon":"⚡"},
-    {"value":"advanced",    "label":"Advanced — train regularly",          "icon":"🚀"}
+    {"value":"under_25", "label":"Under 25", "icon":"sprout"},
+    {"value":"25_35",    "label":"25 to 35",    "icon":"zap"},
+    {"value":"36_50",    "label":"36 to 50",    "icon":"target"},
+    {"value":"over_50",  "label":"50+",      "icon":"star"}
   ]',
-  'level'
+  'age'
 );
 
--- 3. Age range
+-- Q3: Gender
 INSERT INTO nodes (id, type, pos_x, pos_y)
 VALUES ('00000000-0000-0000-0000-000000000003','question',0,400);
 INSERT INTO question_nodes (node_id, title, question_type, options, attribute_key)
 VALUES (
   '00000000-0000-0000-0000-000000000003',
-  'What is your age range?',
+  'What is your gender?',
   'single_choice',
   '[
-    {"value":"under_25","label":"Under 25","icon":"🌱"},
-    {"value":"25_35",   "label":"25–35",   "icon":"⚡"},
-    {"value":"36_50",   "label":"36–50",   "icon":"🎯"},
-    {"value":"over_50", "label":"50+",     "icon":"🌟"}
+    {"value":"male",              "label":"Male",              "icon":"user"},
+    {"value":"female",            "label":"Female",            "icon":"user"},
+    {"value":"non_binary",        "label":"Non-binary",        "icon":"users"},
+    {"value":"prefer_not_to_say", "label":"Prefer not to say", "icon":"lock"}
   ]',
-  'age'
+  'gender'
 );
 
--- 4. Gender
+-- Q4: Fitness level
 INSERT INTO nodes (id, type, pos_x, pos_y)
 VALUES ('00000000-0000-0000-0000-000000000004','question',0,600);
 INSERT INTO question_nodes (node_id, title, question_type, options, attribute_key)
 VALUES (
   '00000000-0000-0000-0000-000000000004',
-  'What is your gender?',
+  'How would you describe your current fitness level?',
   'single_choice',
   '[
-    {"value":"male",             "label":"Male",              "icon":"👨"},
-    {"value":"female",           "label":"Female",            "icon":"👩"},
-    {"value":"non_binary",       "label":"Non-binary",        "icon":"🧑"},
-    {"value":"prefer_not_to_say","label":"Prefer not to say", "icon":"🔒"}
+    {"value":"beginner",     "label":"Beginner, just starting out",       "icon":"sprout"},
+    {"value":"intermediate", "label":"Intermediate, work out sometimes", "icon":"zap"},
+    {"value":"advanced",     "label":"Advanced, train regularly",         "icon":"rocket"}
   ]',
-  'gender'
+  'level'
 );
 
--- 5. Workout context / location
+-- ============================================================
+-- CONDITIONAL: Branch by goal after Q4
+-- ============================================================
+
 INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000005','question',0,800);
+VALUES ('00000000-0000-0000-0000-000000000040','conditional',0,800);
+INSERT INTO conditional_nodes (node_id, title)
+VALUES ('00000000-0000-0000-0000-000000000040','Branch by goal');
+
+-- ============================================================
+-- GOAL-SPECIFIC INFO NODES (motivational tips)
+-- ============================================================
+
+-- INFO: Weight Loss
+INSERT INTO nodes (id, type, pos_x, pos_y)
+VALUES ('00000000-0000-0000-0000-000000000030','info',-800,1000);
+INSERT INTO info_nodes (node_id, title, content)
+VALUES (
+  '00000000-0000-0000-0000-000000000030',
+  'Smart weight loss starts with understanding your body',
+  'Research shows that people who combine structured exercise with mindful eating lose 2x more weight than those who diet alone. A few more questions will help us build the perfect plan for you.'
+);
+
+-- INFO: Strength
+INSERT INTO nodes (id, type, pos_x, pos_y)
+VALUES ('00000000-0000-0000-0000-000000000031','info',-400,1000);
+INSERT INTO info_nodes (node_id, title, content)
+VALUES (
+  '00000000-0000-0000-0000-000000000031',
+  'Strength training transforms more than just muscles',
+  'Progressive resistance training increases bone density by up to 8% and boosts metabolism for 72 hours after each session. Let''s tailor your program to your equipment and body.'
+);
+
+-- INFO: Flexibility
+INSERT INTO nodes (id, type, pos_x, pos_y)
+VALUES ('00000000-0000-0000-0000-000000000032','info',0,1000);
+INSERT INTO info_nodes (node_id, title, content)
+VALUES (
+  '00000000-0000-0000-0000-000000000032',
+  'Flexibility is the foundation of a healthy body',
+  'People who improve mobility report 40% less pain and significantly better posture within just 4 weeks. Small, consistent sessions make a huge difference.'
+);
+
+-- INFO: Stress Relief
+INSERT INTO nodes (id, type, pos_x, pos_y)
+VALUES ('00000000-0000-0000-0000-000000000033','info',400,1000);
+INSERT INTO info_nodes (node_id, title, content)
+VALUES (
+  '00000000-0000-0000-0000-000000000033',
+  'Your body keeps the score. Let''s reset it.',
+  'Chronic stress raises cortisol levels, disrupting sleep, digestion, and focus. Science-backed techniques like breathwork and movement can lower cortisol by up to 25% in just 2 weeks.'
+);
+
+-- INFO: Endurance
+INSERT INTO nodes (id, type, pos_x, pos_y)
+VALUES ('00000000-0000-0000-0000-000000000034','info',800,1000);
+INSERT INTO info_nodes (node_id, title, content)
+VALUES (
+  '00000000-0000-0000-0000-000000000034',
+  'Endurance is the ultimate health multiplier',
+  'Improving cardiovascular fitness by even 10% reduces all-cause mortality risk by 15%. Whether running, cycling, or swimming, consistency beats intensity.'
+);
+
+-- ============================================================
+-- PHASE 2: GOAL-SPECIFIC QUESTIONS (2 per branch)
+-- ============================================================
+
+-- ---- WEIGHT LOSS BRANCH ----
+
+-- Q5a: Workout location
+INSERT INTO nodes (id, type, pos_x, pos_y)
+VALUES ('00000000-0000-0000-0000-000000000005','question',-800,1200);
 INSERT INTO question_nodes (node_id, title, question_type, options, attribute_key)
 VALUES (
   '00000000-0000-0000-0000-000000000005',
   'Where do you prefer to work out?',
   'single_choice',
   '[
-    {"value":"home",   "label":"At Home",   "icon":"🏠"},
-    {"value":"gym",    "label":"At the Gym","icon":"🏋️"},
-    {"value":"outdoor","label":"Outdoors",  "icon":"🌳"}
+    {"value":"home",    "label":"At Home",    "icon":"home"},
+    {"value":"gym",     "label":"At the Gym", "icon":"dumbbell"},
+    {"value":"outdoor", "label":"Outdoors",   "icon":"tree"}
   ]',
   'context'
 );
 
--- 6a. Time available (branch: weight_loss + home)
+-- Q6a: Diet habits
 INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000006','question',-500,1050);
+VALUES ('00000000-0000-0000-0000-000000000006','question',-800,1400);
 INSERT INTO question_nodes (node_id, title, question_type, options, attribute_key)
 VALUES (
   '00000000-0000-0000-0000-000000000006',
-  'How much time can you dedicate to training each day?',
+  'How would you describe your current eating habits?',
   'single_choice',
   '[
-    {"value":"10_15",  "label":"10–15 minutes","icon":"⚡"},
-    {"value":"20_30",  "label":"20–30 minutes","icon":"🕐"},
-    {"value":"45_plus","label":"45+ minutes",  "icon":"💥"}
+    {"value":"healthy", "label":"Mostly healthy and balanced",           "icon":"salad"},
+    {"value":"mixed",   "label":"Mixed, good days and bad days",        "icon":"utensils"},
+    {"value":"poor",    "label":"Mostly fast food and irregular meals", "icon":"pizza"}
   ]',
-  'time_available'
+  'diet'
 );
 
--- 6b. Injuries / limitations (branch: strength or weight_loss + gym)
+-- ---- STRENGTH BRANCH ----
+
+-- Q5b: Equipment access
 INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000007','question',0,1050);
+VALUES ('00000000-0000-0000-0000-000000000007','question',-400,1200);
 INSERT INTO question_nodes (node_id, title, question_type, options, attribute_key)
 VALUES (
   '00000000-0000-0000-0000-000000000007',
+  'What equipment do you have access to?',
+  'single_choice',
+  '[
+    {"value":"full_gym",    "label":"Full gym with machines and free weights", "icon":"dumbbell"},
+    {"value":"home_basics", "label":"Home basics: dumbbells, bands, etc.",    "icon":"home"},
+    {"value":"none",        "label":"No equipment, bodyweight only",          "icon":"user"}
+  ]',
+  'equipment'
+);
+
+-- Q6b: Injuries
+INSERT INTO nodes (id, type, pos_x, pos_y)
+VALUES ('00000000-0000-0000-0000-000000000008','question',-400,1400);
+INSERT INTO question_nodes (node_id, title, question_type, options, attribute_key)
+VALUES (
+  '00000000-0000-0000-0000-000000000008',
   'Do you have any injuries or physical limitations?',
   'single_choice',
   '[
-    {"value":"none",    "label":"No injuries",         "icon":"✅"},
-    {"value":"knee",    "label":"Knee issues",         "icon":"🦵"},
-    {"value":"back",    "label":"Back / spine issues", "icon":"🔙"},
-    {"value":"shoulder","label":"Shoulder issues",     "icon":"💪"}
+    {"value":"none",     "label":"No injuries",          "icon":"check"},
+    {"value":"knee",     "label":"Knee issues",          "icon":"alert-circle"},
+    {"value":"back",     "label":"Back / spine issues",  "icon":"alert-circle"},
+    {"value":"shoulder", "label":"Shoulder issues",       "icon":"alert-circle"}
   ]',
   'injuries'
 );
 
--- 6c. Running experience (branch: endurance + outdoor)
-INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000008','question',500,1050);
-INSERT INTO question_nodes (node_id, title, question_type, options, attribute_key)
-VALUES (
-  '00000000-0000-0000-0000-000000000008',
-  'What''s your running experience?',
-  'single_choice',
-  '[
-    {"value":"never",     "label":"Never run before", "icon":"🐢"},
-    {"value":"occasional","label":"Run occasionally", "icon":"🚶"},
-    {"value":"regular",   "label":"Run regularly",    "icon":"🏃"}
-  ]',
-  'run_level'
-);
+-- ---- FLEXIBILITY BRANCH ----
 
--- 6d. Flexibility format preference (branch: flexibility, after info)
+-- Q5c: Flexibility type preference
 INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000010','question',-1000,1250);
+VALUES ('00000000-0000-0000-0000-000000000009','question',0,1200);
 INSERT INTO question_nodes (node_id, title, question_type, options, attribute_key)
 VALUES (
-  '00000000-0000-0000-0000-000000000010',
-  'What type of flexibility training appeals to you?',
+  '00000000-0000-0000-0000-000000000009',
+  'What type of flexibility training interests you?',
   'single_choice',
   '[
-    {"value":"yoga",      "label":"Yoga flows",                "icon":"🧘"},
-    {"value":"stretching","label":"Deep stretching / mobility","icon":"🤸"},
-    {"value":"pilates",   "label":"Pilates",                   "icon":"🏋️"}
+    {"value":"yoga",       "label":"Yoga flows",                 "icon":"stretch"},
+    {"value":"stretching", "label":"Deep stretching / mobility", "icon":"move"},
+    {"value":"pilates",    "label":"Pilates",                    "icon":"dumbbell"}
   ]',
   'flex_pref'
 );
 
--- 7. Main barrier (universal convergence)
+-- Q6c: Chronic pain
 INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000011','question',0,1450);
+VALUES ('00000000-0000-0000-0000-000000000010','question',0,1400);
+INSERT INTO question_nodes (node_id, title, question_type, options, attribute_key)
+VALUES (
+  '00000000-0000-0000-0000-000000000010',
+  'Do you experience any chronic pain or stiffness?',
+  'single_choice',
+  '[
+    {"value":"none",   "label":"No pain, I just want more flexibility",  "icon":"check"},
+    {"value":"back",   "label":"Lower back pain",                       "icon":"alert-circle"},
+    {"value":"joints", "label":"Joint stiffness",                       "icon":"alert-circle"},
+    {"value":"neck",   "label":"Neck and shoulders",                    "icon":"alert-circle"}
+  ]',
+  'pain'
+);
+
+-- ---- STRESS RELIEF BRANCH ----
+
+-- Q5d: Main stress source
+INSERT INTO nodes (id, type, pos_x, pos_y)
+VALUES ('00000000-0000-0000-0000-000000000011','question',400,1200);
 INSERT INTO question_nodes (node_id, title, question_type, options, attribute_key)
 VALUES (
   '00000000-0000-0000-0000-000000000011',
+  'What is your main source of stress?',
+  'single_choice',
+  '[
+    {"value":"work",          "label":"Work and career pressure",  "icon":"briefcase"},
+    {"value":"relationships", "label":"Relationships and family",  "icon":"users"},
+    {"value":"health",        "label":"Health concerns",           "icon":"heart"},
+    {"value":"financial",     "label":"Financial worries",         "icon":"dollar-sign"}
+  ]',
+  'stress_source'
+);
+
+-- Q6d: Relaxation preference
+INSERT INTO nodes (id, type, pos_x, pos_y)
+VALUES ('00000000-0000-0000-0000-000000000012','question',400,1400);
+INSERT INTO question_nodes (node_id, title, question_type, options, attribute_key)
+VALUES (
+  '00000000-0000-0000-0000-000000000012',
+  'What relaxation methods appeal to you?',
+  'single_choice',
+  '[
+    {"value":"meditation",  "label":"Meditation and breathwork",     "icon":"wind"},
+    {"value":"movement",    "label":"Gentle movement (yoga, walks)", "icon":"stretch"},
+    {"value":"journaling",  "label":"Journaling and reflection",     "icon":"book-open"},
+    {"value":"nothing_yet", "label":"Haven''t tried anything yet",   "icon":"help-circle"}
+  ]',
+  'relax_pref'
+);
+
+-- ---- ENDURANCE BRANCH ----
+
+-- Q5e: Cardio type preference
+INSERT INTO nodes (id, type, pos_x, pos_y)
+VALUES ('00000000-0000-0000-0000-000000000013','question',800,1200);
+INSERT INTO question_nodes (node_id, title, question_type, options, attribute_key)
+VALUES (
+  '00000000-0000-0000-0000-000000000013',
+  'What type of cardio do you enjoy most?',
+  'single_choice',
+  '[
+    {"value":"running",  "label":"Running / jogging", "icon":"runner"},
+    {"value":"cycling",  "label":"Cycling",           "icon":"bike"},
+    {"value":"swimming", "label":"Swimming",           "icon":"droplet"},
+    {"value":"mixed",    "label":"A mix of everything","icon":"shuffle"}
+  ]',
+  'cardio_type'
+);
+
+-- Q6e: Current cardio endurance
+INSERT INTO nodes (id, type, pos_x, pos_y)
+VALUES ('00000000-0000-0000-0000-000000000014','question',800,1400);
+INSERT INTO question_nodes (node_id, title, question_type, options, attribute_key)
+VALUES (
+  '00000000-0000-0000-0000-000000000014',
+  'How far can you comfortably run or cycle without stopping?',
+  'single_choice',
+  '[
+    {"value":"none",     "label":"I can''t run / cycle far at all", "icon":"pause"},
+    {"value":"low",      "label":"About 1 to 2 km / 10 min",         "icon":"zap"},
+    {"value":"moderate", "label":"3 to 5 km / 20 to 30 min",            "icon":"trending-up"},
+    {"value":"high",     "label":"5+ km / 30+ min easily",        "icon":"rocket"}
+  ]',
+  'cardio_level'
+);
+
+-- ============================================================
+-- PHASE 3: UNIVERSAL END (everyone converges here)
+-- ============================================================
+
+-- Q7: Time available
+INSERT INTO nodes (id, type, pos_x, pos_y)
+VALUES ('00000000-0000-0000-0000-000000000020','question',0,1700);
+INSERT INTO question_nodes (node_id, title, question_type, options, attribute_key)
+VALUES (
+  '00000000-0000-0000-0000-000000000020',
+  'How much time can you dedicate to training each day?',
+  'single_choice',
+  '[
+    {"value":"10_15",   "label":"10 to 15 minutes", "icon":"zap"},
+    {"value":"20_30",   "label":"20 to 30 minutes", "icon":"clock"},
+    {"value":"45_plus", "label":"45+ minutes",   "icon":"flame"}
+  ]',
+  'time_available'
+);
+
+-- Q8: Biggest barrier
+INSERT INTO nodes (id, type, pos_x, pos_y)
+VALUES ('00000000-0000-0000-0000-000000000021','question',0,1900);
+INSERT INTO question_nodes (node_id, title, question_type, options, attribute_key)
+VALUES (
+  '00000000-0000-0000-0000-000000000021',
   'What''s the biggest thing getting in the way of your wellness goals?',
   'single_choice',
   '[
-    {"value":"time_lack",     "label":"Not enough time",                        "icon":"⏰"},
-    {"value":"low_motivation","label":"Lack of motivation or discipline",        "icon":"😔"},
-    {"value":"stress_fatigue","label":"Stress and fatigue",                      "icon":"😰"},
-    {"value":"no_guidance",   "label":"No guidance — don''t know where to start","icon":"🤷"},
-    {"value":"nothing",       "label":"Nothing — I''m ready to go!",            "icon":"🚀"}
+    {"value":"time_lack",      "label":"Not enough time",                          "icon":"clock"},
+    {"value":"low_motivation", "label":"Lack of motivation or discipline",         "icon":"frown"},
+    {"value":"stress_fatigue",  "label":"Stress and fatigue",                       "icon":"cloud"},
+    {"value":"no_guidance",     "label":"No guidance, don''t know where to start",  "icon":"help-circle"},
+    {"value":"nothing",         "label":"Nothing, I''m ready to go!",              "icon":"rocket"}
   ]',
   'barrier'
 );
 
--- 8. Stress level (universal)
+-- Q9: Stress level
 INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000012','question',0,1650);
+VALUES ('00000000-0000-0000-0000-000000000022','question',0,2100);
 INSERT INTO question_nodes (node_id, title, question_type, options, attribute_key)
 VALUES (
-  '00000000-0000-0000-0000-000000000012',
+  '00000000-0000-0000-0000-000000000022',
   'How would you rate your current stress level?',
   'single_choice',
   '[
-    {"value":"low",   "label":"Low — I feel calm and balanced",  "icon":"😊"},
-    {"value":"medium","label":"Medium — some tension day-to-day","icon":"😐"},
-    {"value":"high",  "label":"High — I often feel overwhelmed", "icon":"😰"}
+    {"value":"low",    "label":"Low, I feel calm and balanced",    "icon":"smile"},
+    {"value":"medium", "label":"Medium, some tension day-to-day",  "icon":"meh"},
+    {"value":"high",   "label":"High, I often feel overwhelmed",   "icon":"frown"}
   ]',
   'stress_level'
 );
 
--- 9. Sleep quality (universal)
+-- Q10: Sleep quality
 INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000013','question',0,1850);
+VALUES ('00000000-0000-0000-0000-000000000023','question',0,2300);
 INSERT INTO question_nodes (node_id, title, question_type, options, attribute_key)
 VALUES (
-  '00000000-0000-0000-0000-000000000013',
+  '00000000-0000-0000-0000-000000000023',
   'How is your sleep quality lately?',
   'single_choice',
   '[
-    {"value":"good","label":"Good — 7–8h, I wake up rested",        "icon":"😴"},
-    {"value":"fair","label":"Fair — inconsistent, could be better", "icon":"🌙"},
-    {"value":"poor","label":"Poor — I often wake up tired",         "icon":"😵"}
+    {"value":"good", "label":"Good, 7 to 8h, wake up rested",       "icon":"moon"},
+    {"value":"fair", "label":"Fair, inconsistent, could be better",  "icon":"cloud-moon"},
+    {"value":"poor", "label":"Poor, I often wake up tired",          "icon":"cloud"}
   ]',
   'sleep_quality'
 );
 
--- 10. Energy level (universal)
+-- Q11: What motivates you
 INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000014','question',0,2050);
+VALUES ('00000000-0000-0000-0000-000000000024','question',0,2500);
 INSERT INTO question_nodes (node_id, title, question_type, options, attribute_key)
 VALUES (
-  '00000000-0000-0000-0000-000000000014',
-  'How would you describe your typical daily energy levels?',
+  '00000000-0000-0000-0000-000000000024',
+  'What motivates you the most to keep going?',
   'single_choice',
   '[
-    {"value":"high",  "label":"High — energized most of the day","icon":"⚡"},
-    {"value":"medium","label":"Medium — ups and downs",          "icon":"🔋"},
-    {"value":"low",   "label":"Low — I often feel drained",      "icon":"🪫"}
+    {"value":"results",    "label":"Seeing visible results",          "icon":"trending-up"},
+    {"value":"discipline", "label":"Building discipline and habits",  "icon":"check-square"},
+    {"value":"community",  "label":"Community and accountability",    "icon":"users"},
+    {"value":"health",     "label":"Long-term health and longevity",  "icon":"heart"}
   ]',
-  'energy_level'
+  'motivation'
 );
 
--- ---- INFO NODES --------------------------------------------
+-- ============================================================
+-- INFO: Plan ready (transition to offers)
+-- ============================================================
 
--- INFO: Flexibility motivation (branch: flexibility goal)
 INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000009','info',-1000,1050);
+VALUES ('00000000-0000-0000-0000-000000000035','info',0,2700);
 INSERT INTO info_nodes (node_id, title, content)
 VALUES (
-  '00000000-0000-0000-0000-000000000009',
-  'Flexibility is the foundation of a healthy body 🧘',
-  'People who improve mobility report 40% less pain and significantly better posture within just 4 weeks. Small, consistent daily sessions make a huge difference.'
-);
-
--- 15. INFO: Plan ready (transition — routes to offer nodes)
-INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000015','info',0,2250);
-INSERT INTO info_nodes (node_id, title, content)
-VALUES (
-  '00000000-0000-0000-0000-000000000015',
-  'Your personalized wellness plan is ready! 🎉',
+  '00000000-0000-0000-0000-000000000035',
+  'Your personalized wellness plan is ready!',
   'Based on your answers, we''ve crafted a program that matches your lifestyle, goals, schedule, and current wellbeing. Thousands of people with your exact profile have already transformed their health.'
 );
 
--- ---- OFFER NODES -------------------------------------------
+-- ============================================================
+-- OFFER NODES (7 unique offers)
+-- ============================================================
 
--- 16. OFFER: Weight Loss Starter (home, 20-30+ min)
+-- OFFER 1: Home Fat Burn (weight_loss + home)
 INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000016','offer',-900,2500);
+VALUES ('00000000-0000-0000-0000-000000000050','offer',-900,3200);
 INSERT INTO offer_nodes (node_id, title, description, cta_text, slug, digital_plan, physical_kit, why_text, conditions, priority)
 VALUES (
-  '00000000-0000-0000-0000-000000000016',
-  'Weight Loss Starter',
-  '4-week home fat-burn program — 20–30 min daily sessions, no equipment needed',
+  '00000000-0000-0000-0000-000000000050',
+  'Home Fat Burn Program',
+  '4-week home fat-burn program with daily sessions, no equipment needed',
   'Get My Weight Loss Plan',
-  'weight-loss-starter',
-  'Structured 4-week progressive plan: cardio intervals + bodyweight circuits. Daily 20–30 min sessions. Includes a nutrition guidance sheet and weekly progress tracker.',
-  'Home Fat-Burn Kit: resistance bands, jump rope, shaker bottle, electrolytes + healthy snack',
-  'Based on your goal to lose weight at home with 20–30 minutes daily, this plan delivers exactly the right intensity to see real results without overcommitting.',
+  'home-fat-burn',
+  'Structured 4-week progressive plan: cardio intervals + bodyweight circuits. Includes a nutrition guidance sheet and weekly progress tracker.',
+  'Home Fat-Burn Kit: resistance bands, jump rope, shaker bottle, electrolytes + healthy snack pack',
+  'Based on your goal to lose weight at home, this plan delivers exactly the right intensity to see real results without any equipment.',
   '{"type":"compound","operator":"AND","conditions":[
     {"type":"simple","attribute":"goal","op":"eq","value":"weight_loss"},
-    {"type":"simple","attribute":"context","op":"eq","value":"home"},
-    {"type":"simple","attribute":"time_available","op":"in","value":["20_30","45_plus"]}
+    {"type":"simple","attribute":"context","op":"eq","value":"home"}
   ]}',
   100
 );
 
--- 17. OFFER: Quick Fit Micro-Workouts (home, 10-15 min)
+-- OFFER 2: Gym Shred (weight_loss + gym/outdoor)
 INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000017','offer',-600,2500);
+VALUES ('00000000-0000-0000-0000-000000000051','offer',-600,3200);
 INSERT INTO offer_nodes (node_id, title, description, cta_text, slug, digital_plan, physical_kit, why_text, conditions, priority)
 VALUES (
-  '00000000-0000-0000-0000-000000000017',
-  'Quick Fit Micro-Workouts',
-  '10–15 min daily HIIT micro-workouts — proven fat loss for busy people',
-  'Start My Quick Fit Plan',
-  'quick-fit-micro',
-  '30-day micro-workout challenge: science-backed HIIT circuits that fit in 10–15 minutes. Includes a daily progress calendar.',
-  'Micro-Workout Kit: slider discs, mini loop bands, shaker/water bottle, mini routine card',
-  'With only 10–15 minutes a day, you can still achieve real fat loss results. Your plan is designed to make every single minute count.',
+  '00000000-0000-0000-0000-000000000051',
+  'Gym Shred Program',
+  '6-week gym fat-loss program: compound lifts + HIIT cardio for maximum burn',
+  'Start My Gym Shred',
+  'gym-shred',
+  '6-week periodized fat-loss program: compound lifts, supersets, and HIIT finishers. 4 sessions/week with progressive overload. Includes meal prep guide.',
+  'Gym Shred Kit: wrist wraps, shaker bottle, resistance bands, meal prep containers, electrolytes',
+  'With gym access and your determination, this plan combines weight training and cardio for maximum fat loss while building lean muscle.',
   '{"type":"compound","operator":"AND","conditions":[
     {"type":"simple","attribute":"goal","op":"eq","value":"weight_loss"},
-    {"type":"simple","attribute":"context","op":"eq","value":"home"},
-    {"type":"simple","attribute":"time_available","op":"eq","value":"10_15"}
+    {"type":"simple","attribute":"context","op":"in","value":["gym","outdoor"]}
   ]}',
-  110
+  90
 );
 
--- 18. OFFER: Lean Strength Builder (gym, no injuries)
+-- OFFER 3: Power Builder (strength + no injuries)
 INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000018','offer',-300,2500);
+VALUES ('00000000-0000-0000-0000-000000000052','offer',-300,3200);
 INSERT INTO offer_nodes (node_id, title, description, cta_text, slug, digital_plan, physical_kit, why_text, conditions, priority)
 VALUES (
-  '00000000-0000-0000-0000-000000000018',
-  'Lean Strength Builder',
-  'Progressive gym strength program — 6 weeks, compound lifts + hypertrophy work',
+  '00000000-0000-0000-0000-000000000052',
+  'Power Builder Program',
+  '8-week progressive strength program: compound lifts and hypertrophy work',
   'Build My Strength Plan',
-  'lean-strength-builder',
-  'Periodized 6-week strength program: compound lifts + hypertrophy work. 3–4 sessions/week with progressive overload tracking. Includes a printable workout log and deload guidance.',
-  'Gym Support Kit: wrist wraps/straps, mini loop band, compact towel, electrolytes/protein snack',
-  'With gym access and no injuries holding you back, you''re in the perfect position to build serious strength with a smart progressive program.',
+  'power-builder',
+  'Periodized 8-week strength program: compound lifts + hypertrophy blocks. 3 to 4 sessions/week with progressive overload tracking. Includes printable workout log and deload guidance.',
+  'Strength Kit: wrist wraps/straps, mini loop band, compact towel, protein bar pack, workout log notebook',
+  'With no injuries holding you back, you''re in the perfect position to build serious strength with a smart progressive program.',
   '{"type":"compound","operator":"AND","conditions":[
     {"type":"simple","attribute":"goal","op":"eq","value":"strength"},
-    {"type":"simple","attribute":"context","op":"eq","value":"gym"},
     {"type":"simple","attribute":"injuries","op":"eq","value":"none"}
   ]}',
   100
 );
 
--- 19. OFFER: Low-Impact Fat Burn (gym, with injuries)
+-- OFFER 4: Safe Strength (strength + has injuries)
 INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000019','offer',0,2500);
+VALUES ('00000000-0000-0000-0000-000000000053','offer',0,3200);
 INSERT INTO offer_nodes (node_id, title, description, cta_text, slug, digital_plan, physical_kit, why_text, conditions, priority)
 VALUES (
-  '00000000-0000-0000-0000-000000000019',
-  'Low-Impact Fat Burn',
-  'Joint-friendly strength and fat-burn program — safe for knees, back, and shoulders',
-  'Start My Joint-Safe Plan',
-  'low-impact-fat-burn',
-  '5-week low-impact program: resistance band work, modified exercises, and swimming-inspired movements. Protects your joints while still delivering measurable results.',
-  'Joint-Friendly Kit: knee sleeve/brace, massage ball, mini loop bands, cooling patch/recovery gel',
-  'Given your physical limitations, we''ve designed a plan that protects your joints while still helping you reach your goals safely and effectively.',
+  '00000000-0000-0000-0000-000000000053',
+  'Safe Strength Program',
+  'Joint-friendly strength program that builds muscle while protecting your body',
+  'Start My Safe Strength Plan',
+  'safe-strength',
+  '6-week low-impact strength program: modified exercises, resistance band work, and machine-based movements. Protects your joints while still building real strength.',
+  'Recovery Strength Kit: knee sleeve, massage ball, mini loop bands, cooling gel patches, workout card deck',
+  'Given your physical limitations, we''ve designed a plan that protects your joints while still helping you build meaningful strength safely.',
   '{"type":"compound","operator":"AND","conditions":[
-    {"type":"simple","attribute":"goal","op":"in","value":["strength","weight_loss"]},
-    {"type":"simple","attribute":"context","op":"eq","value":"gym"},
+    {"type":"simple","attribute":"goal","op":"eq","value":"strength"},
     {"type":"simple","attribute":"injuries","op":"in","value":["knee","back","shoulder"]}
   ]}',
   100
 );
 
--- 20. OFFER: Run Your First 5K (outdoor)
+-- OFFER 5: Yoga & Mobility (flexibility)
 INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000020','offer',300,2500);
+VALUES ('00000000-0000-0000-0000-000000000054','offer',300,3200);
 INSERT INTO offer_nodes (node_id, title, description, cta_text, slug, digital_plan, physical_kit, why_text, conditions, priority)
 VALUES (
-  '00000000-0000-0000-0000-000000000020',
-  'Run Your First 5K',
-  '8-week outdoor Couch-to-5K running program — 3 sessions/week',
-  'Start My 5K Journey',
-  'run-first-5k',
-  '8-week Couch-to-5K: 3 sessions/week with walk-run intervals. GPS route suggestions, pacing guide, and post-run recovery protocols included.',
-  'Runner Starter Kit: electrolytes, reflective armband/safety light, blister prevention kit, running belt',
-  'Your outdoor preference and endurance goal make you the perfect candidate for our 5K program.',
-  '{"type":"compound","operator":"AND","conditions":[
-    {"type":"simple","attribute":"goal","op":"eq","value":"endurance"},
-    {"type":"simple","attribute":"context","op":"eq","value":"outdoor"}
-  ]}',
-  100
-);
-
--- 21. OFFER: Yoga & Mobility (flexibility)
-INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000021','offer',600,2500);
-INSERT INTO offer_nodes (node_id, title, description, cta_text, slug, digital_plan, physical_kit, why_text, conditions, priority)
-VALUES (
-  '00000000-0000-0000-0000-000000000021',
+  '00000000-0000-0000-0000-000000000054',
   'Yoga & Mobility Program',
-  'Daily 10–25 min yoga and mobility sessions — flexibility, posture, and pain relief',
+  'Daily 10 to 25 min yoga and mobility sessions for flexibility, posture, and pain relief',
   'Start My Flexibility Journey',
   'yoga-mobility',
   '6-week progressive yoga + mobility program: morning flows, deep stretching sessions, and posture correction routines. Adapts to all levels.',
@@ -365,77 +525,86 @@ VALUES (
   100
 );
 
--- 22. OFFER: Stress Reset Program (stress_relief)
+-- OFFER 6: Endurance Runner (endurance)
 INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000022','offer',900,2500);
+VALUES ('00000000-0000-0000-0000-000000000055','offer',600,3200);
 INSERT INTO offer_nodes (node_id, title, description, cta_text, slug, digital_plan, physical_kit, why_text, conditions, priority)
 VALUES (
-  '00000000-0000-0000-0000-000000000022',
-  'Stress Reset Program',
-  '4-week mental reset — breathwork, meditation, and anti-stress daily routines',
-  'Reset My Stress Today',
-  'stress-reset',
-  '4-week stress reset: daily 10-min breathwork sessions, guided meditations, sleep optimization routines, and mood-tracking micro-habits.',
-  'Calm-Now Kit: eye mask, aroma roll-on/mini candle, herbal tea sticks, stress ball/fidget, quick reset card',
-  'Chronic stress is the hidden blocker of every wellness goal. This program gives you science-backed tools to reset your nervous system.',
-  '{"type":"simple","attribute":"goal","op":"eq","value":"stress_relief"}',
+  '00000000-0000-0000-0000-000000000055',
+  'Endurance Runner Program',
+  '8-week Couch-to-5K running program, 3 sessions per week with progressive goals',
+  'Start My 5K Journey',
+  'endurance-runner',
+  '8-week Couch-to-5K: 3 sessions/week with walk-run intervals. GPS route suggestions, pacing guide, and post-run recovery protocols included.',
+  'Runner Starter Kit: electrolytes, reflective armband, blister prevention kit, running belt, energy gels',
+  'Your endurance goal and cardio preferences make you the perfect candidate for our structured running program.',
+  '{"type":"simple","attribute":"goal","op":"eq","value":"endurance"}',
   100
 );
 
--- ---- CONDITIONAL NODES -------------------------------------
-
--- Node 23: Is goal weight_loss?
+-- OFFER 7: Stress Reset (stress_relief — fallback)
 INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000023','conditional',0,2500);
-INSERT INTO conditional_nodes (node_id, title)
-VALUES ('00000000-0000-0000-0000-000000000023','goal = weight_loss?');
+VALUES ('00000000-0000-0000-0000-000000000056','offer',900,3200);
+INSERT INTO offer_nodes (node_id, title, description, cta_text, slug, digital_plan, physical_kit, why_text, conditions, priority)
+VALUES (
+  '00000000-0000-0000-0000-000000000056',
+  'Stress Reset Program',
+  '4-week mental reset: breathwork, meditation, and anti-stress daily routines',
+  'Reset My Stress Today',
+  'stress-reset',
+  '4-week stress reset: daily 10-min breathwork sessions, guided meditations, sleep optimization routines, and mood-tracking micro-habits.',
+  'Calm-Now Kit: eye mask, aroma roll-on, herbal tea sticks, stress ball, quick reset card',
+  'Chronic stress is the hidden blocker of every wellness goal. This program gives you science-backed tools to reset your nervous system.',
+  '{"type":"simple","attribute":"goal","op":"eq","value":"stress_relief"}',
+  80
+);
 
--- Node 24: Is context home? (within weight_loss)
+-- ============================================================
+-- CONDITIONAL DECISION TREE (routes to offers)
+-- ============================================================
+
+-- COND: goal = weight_loss?
 INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000024','conditional',-700,2700);
+VALUES ('00000000-0000-0000-0000-000000000041','conditional',0,2900);
 INSERT INTO conditional_nodes (node_id, title)
-VALUES ('00000000-0000-0000-0000-000000000024','context = home?');
+VALUES ('00000000-0000-0000-0000-000000000041','goal = weight_loss?');
 
--- Node 25: Is time 10–15 min? (weight_loss + home)
+-- COND: context = home? (within weight_loss)
 INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000025','conditional',-1000,2900);
+VALUES ('00000000-0000-0000-0000-000000000042','conditional',-700,3000);
 INSERT INTO conditional_nodes (node_id, title)
-VALUES ('00000000-0000-0000-0000-000000000025','time = 10–15 min?');
+VALUES ('00000000-0000-0000-0000-000000000042','context = home?');
 
--- Node 26: No injuries? (weight_loss + gym)
+-- COND: goal = strength?
 INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000026','conditional',-400,2900);
+VALUES ('00000000-0000-0000-0000-000000000043','conditional',300,3000);
 INSERT INTO conditional_nodes (node_id, title)
-VALUES ('00000000-0000-0000-0000-000000000026','injuries = none?');
+VALUES ('00000000-0000-0000-0000-000000000043','goal = strength?');
 
--- Node 27: Is goal strength?
+-- COND: injuries = none? (within strength)
 INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000027','conditional',700,2700);
+VALUES ('00000000-0000-0000-0000-000000000044','conditional',-150,3100);
 INSERT INTO conditional_nodes (node_id, title)
-VALUES ('00000000-0000-0000-0000-000000000027','goal = strength?');
+VALUES ('00000000-0000-0000-0000-000000000044','injuries = none?');
 
--- Node 28: No injuries? (strength)
+-- COND: goal = flexibility?
 INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000028','conditional',400,2900);
+VALUES ('00000000-0000-0000-0000-000000000045','conditional',600,3100);
 INSERT INTO conditional_nodes (node_id, title)
-VALUES ('00000000-0000-0000-0000-000000000028','injuries = none?');
+VALUES ('00000000-0000-0000-0000-000000000045','goal = flexibility?');
 
--- Node 29: Is goal endurance?
+-- COND: goal = endurance?
 INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000029','conditional',1000,2900);
+VALUES ('00000000-0000-0000-0000-000000000046','conditional',900,3100);
 INSERT INTO conditional_nodes (node_id, title)
-VALUES ('00000000-0000-0000-0000-000000000029','goal = endurance?');
-
--- Node 30: Is goal flexibility?
-INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000030','conditional',1300,3100);
-INSERT INTO conditional_nodes (node_id, title)
-VALUES ('00000000-0000-0000-0000-000000000030','goal = flexibility?');
+VALUES ('00000000-0000-0000-0000-000000000046','goal = endurance?');
 
 
--- ---- EDGES -------------------------------------------------
+-- ============================================================
+-- EDGES
+-- ============================================================
 
--- Main linear path: Q1 → Q2 → Q3 → Q4 → Q5
+-- ---- Phase 1: Linear start Q1 → Q2 → Q3 → Q4 → COND(40) ----
 INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
 VALUES ('00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002',NULL,NULL,0);
 INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
@@ -443,168 +612,120 @@ VALUES ('00000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-00000000
 INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
 VALUES ('00000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000004',NULL,NULL,0);
 INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES ('00000000-0000-0000-0000-000000000004','00000000-0000-0000-0000-000000000005',NULL,NULL,0);
+VALUES ('00000000-0000-0000-0000-000000000004','00000000-0000-0000-0000-000000000040',NULL,NULL,0);
 
--- Q5 → Q6a: weight_loss + home
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES (
-  '00000000-0000-0000-0000-000000000005',
-  '00000000-0000-0000-0000-000000000006',
-  'Weight loss at home',
-  '{"type":"compound","operator":"AND","conditions":[
-    {"type":"simple","attribute":"goal","op":"eq","value":"weight_loss"},
-    {"type":"simple","attribute":"context","op":"eq","value":"home"}
-  ]}',
-  10
-);
+-- ---- COND(40): Branch by goal → info nodes ----
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle)
+VALUES ('00000000-0000-0000-0000-000000000040','00000000-0000-0000-0000-000000000030','weight_loss',
+  '{"type":"simple","attribute":"goal","op":"eq","value":"weight_loss"}',10,'true');
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle)
+VALUES ('00000000-0000-0000-0000-000000000040','00000000-0000-0000-0000-000000000031','strength',
+  '{"type":"simple","attribute":"goal","op":"eq","value":"strength"}',10,'true');
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle)
+VALUES ('00000000-0000-0000-0000-000000000040','00000000-0000-0000-0000-000000000032','flexibility',
+  '{"type":"simple","attribute":"goal","op":"eq","value":"flexibility"}',10,'true');
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle)
+VALUES ('00000000-0000-0000-0000-000000000040','00000000-0000-0000-0000-000000000033','stress_relief',
+  '{"type":"simple","attribute":"goal","op":"eq","value":"stress_relief"}',10,'true');
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle)
+VALUES ('00000000-0000-0000-0000-000000000040','00000000-0000-0000-0000-000000000034','endurance',
+  '{"type":"simple","attribute":"goal","op":"eq","value":"endurance"}',10,'true');
+-- Fallback: if somehow no goal matches, go to stress info
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle)
+VALUES ('00000000-0000-0000-0000-000000000040','00000000-0000-0000-0000-000000000033',NULL,NULL,0,'false');
 
--- Q5 → Q6b: strength + gym
+-- ---- Info → goal-specific Q5 ----
 INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES (
-  '00000000-0000-0000-0000-000000000005',
-  '00000000-0000-0000-0000-000000000007',
-  'Strength at gym',
-  '{"type":"compound","operator":"AND","conditions":[
-    {"type":"simple","attribute":"goal","op":"eq","value":"strength"},
-    {"type":"simple","attribute":"context","op":"eq","value":"gym"}
-  ]}',
-  10
-);
+VALUES ('00000000-0000-0000-0000-000000000030','00000000-0000-0000-0000-000000000005',NULL,NULL,0);
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000031','00000000-0000-0000-0000-000000000007',NULL,NULL,0);
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000032','00000000-0000-0000-0000-000000000009',NULL,NULL,0);
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000033','00000000-0000-0000-0000-000000000011',NULL,NULL,0);
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000034','00000000-0000-0000-0000-000000000013',NULL,NULL,0);
 
--- Q5 → Q6b: weight_loss + gym
+-- ---- Q5 → Q6 within each branch ----
 INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES (
-  '00000000-0000-0000-0000-000000000005',
-  '00000000-0000-0000-0000-000000000007',
-  'Weight loss at gym',
-  '{"type":"compound","operator":"AND","conditions":[
-    {"type":"simple","attribute":"goal","op":"eq","value":"weight_loss"},
-    {"type":"simple","attribute":"context","op":"eq","value":"gym"}
-  ]}',
-  9
-);
-
--- Q5 → Q6c: endurance + outdoor
+VALUES ('00000000-0000-0000-0000-000000000005','00000000-0000-0000-0000-000000000006',NULL,NULL,0);
 INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES (
-  '00000000-0000-0000-0000-000000000005',
-  '00000000-0000-0000-0000-000000000008',
-  'Endurance outdoors',
-  '{"type":"compound","operator":"AND","conditions":[
-    {"type":"simple","attribute":"goal","op":"eq","value":"endurance"},
-    {"type":"simple","attribute":"context","op":"eq","value":"outdoor"}
-  ]}',
-  10
-);
-
--- Q5 → INFO flex: flexibility
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES (
-  '00000000-0000-0000-0000-000000000005',
-  '00000000-0000-0000-0000-000000000009',
-  'Flexibility path',
-  '{"type":"simple","attribute":"goal","op":"eq","value":"flexibility"}',
-  10
-);
-
--- Q5 → Q7: stress_relief (skip branching)
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES (
-  '00000000-0000-0000-0000-000000000005',
-  '00000000-0000-0000-0000-000000000011',
-  'Stress relief direct',
-  '{"type":"simple","attribute":"goal","op":"eq","value":"stress_relief"}',
-  10
-);
-
--- Q5 → Q7: default fallback
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES ('00000000-0000-0000-0000-000000000005','00000000-0000-0000-0000-000000000011',NULL,NULL,0);
-
--- Branch exits → Q7 (universal convergence)
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES ('00000000-0000-0000-0000-000000000006','00000000-0000-0000-0000-000000000011',NULL,NULL,0);
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES ('00000000-0000-0000-0000-000000000007','00000000-0000-0000-0000-000000000011',NULL,NULL,0);
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES ('00000000-0000-0000-0000-000000000008','00000000-0000-0000-0000-000000000011',NULL,NULL,0);
-
--- Flexibility info → Q6d, Q6d → Q7
+VALUES ('00000000-0000-0000-0000-000000000007','00000000-0000-0000-0000-000000000008',NULL,NULL,0);
 INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
 VALUES ('00000000-0000-0000-0000-000000000009','00000000-0000-0000-0000-000000000010',NULL,NULL,0);
 INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES ('00000000-0000-0000-0000-000000000010','00000000-0000-0000-0000-000000000011',NULL,NULL,0);
-
--- Universal path: Q7 → Q8 → Q9 → Q10 → INFO(15)
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
 VALUES ('00000000-0000-0000-0000-000000000011','00000000-0000-0000-0000-000000000012',NULL,NULL,0);
 INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES ('00000000-0000-0000-0000-000000000012','00000000-0000-0000-0000-000000000013',NULL,NULL,0);
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
 VALUES ('00000000-0000-0000-0000-000000000013','00000000-0000-0000-0000-000000000014',NULL,NULL,0);
+
+-- ---- All Q6 branches converge → Q7 (time_available) ----
 INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES ('00000000-0000-0000-0000-000000000014','00000000-0000-0000-0000-000000000015',NULL,NULL,0);
+VALUES ('00000000-0000-0000-0000-000000000006','00000000-0000-0000-0000-000000000020',NULL,NULL,0);
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000008','00000000-0000-0000-0000-000000000020',NULL,NULL,0);
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000010','00000000-0000-0000-0000-000000000020',NULL,NULL,0);
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000012','00000000-0000-0000-0000-000000000020',NULL,NULL,0);
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000014','00000000-0000-0000-0000-000000000020',NULL,NULL,0);
 
--- 15 → 23 (single unconditional entry to decision tree)
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
-VALUES ('00000000-0000-0000-0000-000000000015','00000000-0000-0000-0000-000000000023',NULL,NULL,0,'source',NULL);
+-- ---- Phase 3: Universal end Q7 → Q8 → Q9 → Q10 → Q11 → INFO(35) ----
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000020','00000000-0000-0000-0000-000000000021',NULL,NULL,0);
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000021','00000000-0000-0000-0000-000000000022',NULL,NULL,0);
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000022','00000000-0000-0000-0000-000000000023',NULL,NULL,0);
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000023','00000000-0000-0000-0000-000000000024',NULL,NULL,0);
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000024','00000000-0000-0000-0000-000000000035',NULL,NULL,0);
 
--- 23 → 24 TRUE (weight_loss)
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
-VALUES ('00000000-0000-0000-0000-000000000023','00000000-0000-0000-0000-000000000024','weight_loss','{"type":"simple","attribute":"goal","op":"eq","value":"weight_loss"}',10,'true',NULL);
--- 23 → 27 FALSE (fallback)
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
-VALUES ('00000000-0000-0000-0000-000000000023','00000000-0000-0000-0000-000000000027',NULL,NULL,0,'false',NULL);
+-- ---- INFO(35) → COND(41) decision tree ----
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000035','00000000-0000-0000-0000-000000000041',NULL,NULL,0);
 
--- 24 → 25 TRUE (home)
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
-VALUES ('00000000-0000-0000-0000-000000000024','00000000-0000-0000-0000-000000000025','home','{"type":"simple","attribute":"context","op":"eq","value":"home"}',10,'true',NULL);
--- 24 → 26 FALSE (gym)
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
-VALUES ('00000000-0000-0000-0000-000000000024','00000000-0000-0000-0000-000000000026','gym',NULL,0,'false',NULL);
+-- ---- Decision tree edges ----
 
--- 25 → OFFER 17 TRUE (10_15 min)
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
-VALUES ('00000000-0000-0000-0000-000000000025','00000000-0000-0000-0000-000000000017','10–15 min','{"type":"simple","attribute":"time_available","op":"eq","value":"10_15"}',10,'true',NULL);
--- 25 → OFFER 16 FALSE (20–30 / 45+ min)
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
-VALUES ('00000000-0000-0000-0000-000000000025','00000000-0000-0000-0000-000000000016','20–30 / 45+ min',NULL,0,'false',NULL);
+-- COND(41): goal = weight_loss? → COND(42) : COND(43)
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle)
+VALUES ('00000000-0000-0000-0000-000000000041','00000000-0000-0000-0000-000000000042','weight_loss',
+  '{"type":"simple","attribute":"goal","op":"eq","value":"weight_loss"}',10,'true');
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle)
+VALUES ('00000000-0000-0000-0000-000000000041','00000000-0000-0000-0000-000000000043',NULL,NULL,0,'false');
 
--- 26 → OFFER 16 TRUE (no injuries)
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
-VALUES ('00000000-0000-0000-0000-000000000026','00000000-0000-0000-0000-000000000016','no injuries','{"type":"simple","attribute":"injuries","op":"eq","value":"none"}',10,'true',NULL);
--- 26 → OFFER 19 FALSE (has injuries)
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
-VALUES ('00000000-0000-0000-0000-000000000026','00000000-0000-0000-0000-000000000019','has injuries',NULL,0,'false',NULL);
+-- COND(42): context = home? → OFFER(50) Home Fat Burn : OFFER(51) Gym Shred
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle)
+VALUES ('00000000-0000-0000-0000-000000000042','00000000-0000-0000-0000-000000000050','home',
+  '{"type":"simple","attribute":"context","op":"eq","value":"home"}',10,'true');
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle)
+VALUES ('00000000-0000-0000-0000-000000000042','00000000-0000-0000-0000-000000000051','gym/outdoor',NULL,0,'false');
 
--- 27 → 28 TRUE (strength)
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
-VALUES ('00000000-0000-0000-0000-000000000027','00000000-0000-0000-0000-000000000028','strength','{"type":"simple","attribute":"goal","op":"eq","value":"strength"}',10,'true',NULL);
--- 27 → 29 FALSE (fallback)
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
-VALUES ('00000000-0000-0000-0000-000000000027','00000000-0000-0000-0000-000000000029',NULL,NULL,0,'false',NULL);
+-- COND(43): goal = strength? → COND(44) : COND(45)
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle)
+VALUES ('00000000-0000-0000-0000-000000000043','00000000-0000-0000-0000-000000000044','strength',
+  '{"type":"simple","attribute":"goal","op":"eq","value":"strength"}',10,'true');
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle)
+VALUES ('00000000-0000-0000-0000-000000000043','00000000-0000-0000-0000-000000000045',NULL,NULL,0,'false');
 
--- 28 → OFFER 18 TRUE (no injuries)
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
-VALUES ('00000000-0000-0000-0000-000000000028','00000000-0000-0000-0000-000000000018','no injuries','{"type":"simple","attribute":"injuries","op":"eq","value":"none"}',10,'true',NULL);
--- 28 → OFFER 19 FALSE (has injuries)
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
-VALUES ('00000000-0000-0000-0000-000000000028','00000000-0000-0000-0000-000000000019','has injuries',NULL,0,'false',NULL);
+-- COND(44): injuries = none? → OFFER(52) Power Builder : OFFER(53) Safe Strength
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle)
+VALUES ('00000000-0000-0000-0000-000000000044','00000000-0000-0000-0000-000000000052','no injuries',
+  '{"type":"simple","attribute":"injuries","op":"eq","value":"none"}',10,'true');
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle)
+VALUES ('00000000-0000-0000-0000-000000000044','00000000-0000-0000-0000-000000000053','has injuries',NULL,0,'false');
 
--- 29 → OFFER 20 TRUE (endurance)
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
-VALUES ('00000000-0000-0000-0000-000000000029','00000000-0000-0000-0000-000000000020','endurance','{"type":"simple","attribute":"goal","op":"eq","value":"endurance"}',10,'true',NULL);
--- 29 → 30 FALSE (fallback)
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
-VALUES ('00000000-0000-0000-0000-000000000029','00000000-0000-0000-0000-000000000030',NULL,NULL,0,'false',NULL);
+-- COND(45): goal = flexibility? → OFFER(54) Yoga : COND(46)
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle)
+VALUES ('00000000-0000-0000-0000-000000000045','00000000-0000-0000-0000-000000000054','flexibility',
+  '{"type":"simple","attribute":"goal","op":"eq","value":"flexibility"}',10,'true');
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle)
+VALUES ('00000000-0000-0000-0000-000000000045','00000000-0000-0000-0000-000000000046',NULL,NULL,0,'false');
 
--- 30 → OFFER 21 TRUE (flexibility)
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
-VALUES ('00000000-0000-0000-0000-000000000030','00000000-0000-0000-0000-000000000021','flexibility','{"type":"simple","attribute":"goal","op":"eq","value":"flexibility"}',10,'true',NULL);
--- 30 → OFFER 22 FALSE (stress_relief / other)
-INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle, target_handle)
-VALUES ('00000000-0000-0000-0000-000000000030','00000000-0000-0000-0000-000000000022','stress / other',NULL,0,'false',NULL);
-
-
--- All offer data (digital_plan, physical_kit, why_text, conditions, priority) is now
--- stored in offer_nodes above. The separate offers table has been removed.
+-- COND(46): goal = endurance? → OFFER(55) Runner : OFFER(56) Stress Reset (fallback)
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle)
+VALUES ('00000000-0000-0000-0000-000000000046','00000000-0000-0000-0000-000000000055','endurance',
+  '{"type":"simple","attribute":"goal","op":"eq","value":"endurance"}',10,'true');
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority, source_handle)
+VALUES ('00000000-0000-0000-0000-000000000046','00000000-0000-0000-0000-000000000056','stress / other',NULL,0,'false');

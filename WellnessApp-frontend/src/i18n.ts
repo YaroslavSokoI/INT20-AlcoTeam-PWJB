@@ -9,13 +9,9 @@ const resources = {
   ua: { translation: uaTranslation },
 };
 
-// i18n code (en/ua) → backend lang code (en/uk)
-const i18nToBackend: Record<string, string> = { en: 'en', ua: 'uk' };
-const backendToI18n: Record<string, string> = { en: 'en', uk: 'ua' };
-
 // Restore saved language or default to ua
-const savedBackendLang = localStorage.getItem('quiz-lang');
-const lng = savedBackendLang ? (backendToI18n[savedBackendLang] || 'ua') : 'ua';
+const savedLang = localStorage.getItem('quiz-lang');
+const lng = savedLang && ['en', 'ua'].includes(savedLang) ? savedLang : 'ua';
 
 i18n
   .use(initReactI18next)
@@ -29,6 +25,6 @@ i18n
   });
 
 // Ensure localStorage is in sync
-localStorage.setItem('quiz-lang', i18nToBackend[lng] || 'uk');
+localStorage.setItem('quiz-lang', lng);
 
 export default i18n;

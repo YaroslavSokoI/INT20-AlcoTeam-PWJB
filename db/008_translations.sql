@@ -1,5 +1,5 @@
 -- Add translations JSONB to all type-specific node tables.
--- Structure: {"uk": {"title": "...", "description": "..."}, "ru": {"title": "..."}}
+-- Structure: {"ua": {"title": "...", "description": "..."}, "ru": {"title": "..."}}
 -- EN content stays in the existing fields (default/fallback).
 
 ALTER TABLE question_nodes    ADD COLUMN IF NOT EXISTS translations JSONB DEFAULT '{}';

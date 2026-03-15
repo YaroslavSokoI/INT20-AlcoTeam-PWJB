@@ -14,7 +14,6 @@ const LANGUAGES = [
   { code: 'ua', label: 'Українська' },
 ] as const;
 
-const i18nToBackend: Record<string, string> = { en: 'en', ua: 'uk' };
 
 export function Header({ onBack, canGoBack }: HeaderProps) {
   const { t, i18n } = useTranslation();
@@ -75,7 +74,7 @@ export function Header({ onBack, canGoBack }: HeaderProps) {
                   key={lang.code}
                   onClick={() => {
                     i18n.changeLanguage(lang.code);
-                    localStorage.setItem('quiz-lang', i18nToBackend[lang.code] || lang.code);
+                    localStorage.setItem('quiz-lang', lang.code);
                     setIsOpen(false);
                   }}
                   className={`w-full text-left px-4 py-2.5 text-[15px] font-medium transition-colors cursor-pointer flex items-center justify-between ${
