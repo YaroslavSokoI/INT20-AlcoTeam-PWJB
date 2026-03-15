@@ -1,2 +1,0 @@
-ALTER TABLE nodes ADD COLUMN IF NOT EXISTS cta_text TEXT;
-ALTER TABLE published_nodes ADD COLUMN IF NOT EXISTS cta_text TEXT;

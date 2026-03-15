@@ -1,9 +1,16 @@
 import { Router, Request, Response } from 'express';
 import UAParser from 'ua-parser-js';
+import geoip from 'geoip-lite';
 import pool from '../db/client.js';
 import { resolveNextEdge } from '../services/rule-engine.js';
 import { resolveOffers } from '../services/offer.service.js';
 import type { DbNode, DbEdge, Session, SubmitAnswerBody } from '../types/index.js';
+
+function getCountryFromIp(ip: string | null): string | null {
+  if (!ip) return null;
+  const geo = geoip.lookup(ip);
+  return geo?.country ?? null;
+}
 
 const router = Router();
 
@@ -115,12 +122,14 @@ router.post('/sessions', async (req: Request, res: Response) => {
     const browser = browserInfo.name ? `${browserInfo.name} ${browserInfo.version || ''}`.trim() : null;
     const deviceType = deviceInfo.type || (meta.in_app ? 'mobile' : 'desktop');
 
+    const country = getCountryFromIp(ip);
+
     const { rows } = await pool.query<Session>(
       `INSERT INTO sessions (
         current_node_id, attributes,
         ip, os, browser, device_type, language, referrer,
-        utm_source, utm_medium, utm_campaign, in_app
-      ) VALUES ($1, '{}', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        utm_source, utm_medium, utm_campaign, in_app, country
+      ) VALUES ($1, '{}', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *`,
       [
         resolvedNode.id,
@@ -134,6 +143,7 @@ router.post('/sessions', async (req: Request, res: Response) => {
         meta.utm_medium || null,
         meta.utm_campaign || null,
         meta.in_app || null,
+        country,
       ],
     );
     const session = rows[0];

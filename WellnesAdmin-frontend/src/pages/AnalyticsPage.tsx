@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ComposableMap, Geographies, Geography, ZoomableGroup } from 'react-simple-maps';
 import {
   LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell, Legend
@@ -14,6 +15,20 @@ import { apiService, type AnalyticsStats, type DropoffItem } from '@/services/ap
 import { X } from 'lucide-react';
 
 type DateRange = '7D' | '30D' | '90D' | 'ALL';
+
+const GEO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
+
+// ISO numeric → our country name
+const ISO_NUMERIC: Record<number, string> = {
+  840: 'United States', 804: 'Ukraine', 276: 'Germany', 826: 'United Kingdom',
+  250: 'France', 616: 'Poland', 124: 'Canada', 76: 'Brazil', 36: 'Australia',
+  528: 'Netherlands', 724: 'Spain', 380: 'Italy', 392: 'Japan', 752: 'Sweden',
+  578: 'Norway', 208: 'Denmark', 246: 'Finland', 756: 'Switzerland', 40: 'Austria',
+  56: 'Belgium', 620: 'Portugal', 203: 'Czech Republic', 642: 'Romania',
+  348: 'Hungary', 792: 'Turkey', 356: 'India', 410: 'South Korea', 702: 'Singapore',
+  484: 'Mexico', 32: 'Argentina', 152: 'Chile', 170: 'Colombia', 710: 'South Africa',
+  566: 'Nigeria', 376: 'Israel', 784: 'UAE', 682: 'Saudi Arabia', 554: 'New Zealand',
+};
 
 const GOAL_COLORS: Record<string, string> = {
   weight_loss: '#4f8ef7',
@@ -99,10 +114,11 @@ function exportCSV(stats: AnalyticsStats, range: string) {
   lines.push(`Overview,Total Sessions,${stats.totalSessions}`);
   lines.push(`Overview,Completed Sessions,${stats.completedSessions}`);
   lines.push(`Overview,Completion Rate,${stats.completionRate}%`);
+  lines.push(`Overview,Avg Completion Time (min),${stats.avgCompletionMin ?? ''}`);
 
   lines.push('');
   lines.push('Goal,Count');
-  stats.topGoals.forEach(g => lines.push(`${g.label},${g.count}`));
+  stats.topGoals.forEach(g => lines.push(`${GOAL_LABELS[g.label] || g.label},${g.count}`));
 
   lines.push('');
   lines.push('Week,Rate %');
@@ -124,9 +140,100 @@ function exportCSV(stats: AnalyticsStats, range: string) {
   lines.push('Language,Count');
   stats.languages.forEach(l => lines.push(`${l.label},${l.count}`));
 
+  const AGE_L: Record<string, string> = { under_25: 'Under 25', '25_35': '25–35', '36_50': '36–50', over_50: '50+' };
+  lines.push('');
+  lines.push('Age Range,Count');
+  stats.ageRange.forEach(a => lines.push(`${AGE_L[a.label] || a.label},${a.count}`));
+
+  lines.push('');
+  lines.push('Country,Count');
+  stats.countries.forEach(c => lines.push(`${c.label},${c.count}`));
+
   downloadFile(lines.join('\n'), `analytics_${range}.csv`, 'text/csv');
 }
 
+
+function WorldMap({ countries }: { countries: { label: string; count: number }[] }) {
+  const [tooltip, setTooltip] = useState<{ name: string; count: number; pct: number; x: number; y: number } | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [center, setCenter] = useState<[number, number]>([15, 10]);
+  const countryMap = new Map(countries.map(c => [c.label, c.count]));
+  const total = countries.reduce((s, c) => s + c.count, 0) || 1;
+  const maxCount = Math.max(...countries.map(c => c.count), 1);
+
+  function getColor(count: number) {
+    if (!count) return '#e5e7eb';
+    const t = Math.pow(count / maxCount, 0.35);
+    const r = Math.round(191 + (30 - 191) * t);
+    const g = Math.round(219 + (58 - 219) * t);
+    const b = Math.round(254 + (138 - 254) * t);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  return (
+    <div className="relative w-full flex-1 min-h-0" onMouseLeave={() => setTooltip(null)}>
+      {/* Zoom controls */}
+      <div className="absolute top-2 right-2 z-10 flex flex-col gap-1">
+        <button
+          onClick={() => setZoom(z => Math.min(z * 1.5, 8))}
+          className="w-7 h-7 rounded-lg bg-white border border-[var(--color-border)] shadow-sm flex items-center justify-center text-sm font-black text-[var(--color-text-primary)] hover:bg-[var(--color-bg)] active:scale-95 transition-all"
+        >+</button>
+        <button
+          onClick={() => setZoom(z => Math.max(z / 1.5, 1))}
+          className="w-7 h-7 rounded-lg bg-white border border-[var(--color-border)] shadow-sm flex items-center justify-center text-sm font-black text-[var(--color-text-primary)] hover:bg-[var(--color-bg)] active:scale-95 transition-all"
+        >−</button>
+        {zoom > 1 && (
+          <button
+            onClick={() => { setZoom(1); setCenter([15, 10]); }}
+            className="w-7 h-7 rounded-lg bg-white border border-[var(--color-border)] shadow-sm flex items-center justify-center text-[9px] font-black text-[var(--color-text-muted)] hover:bg-[var(--color-bg)] active:scale-95 transition-all"
+          >↺</button>
+        )}
+      </div>
+
+      <ComposableMap projectionConfig={{ scale: 240, center: [15, 10] }} style={{ width: '100%', height: '100%', display: 'block' }}>
+        <ZoomableGroup zoom={zoom} center={center} onMoveEnd={({ zoom: z, coordinates }: { zoom: number; coordinates: [number, number] }) => { setZoom(z); setCenter(coordinates); }}>
+          <Geographies geography={GEO_URL}>
+            {({ geographies }: any) => geographies.map((geo: any) => {
+              const name = ISO_NUMERIC[parseInt(geo.id)];
+              const count = name ? (countryMap.get(name) || 0) : 0;
+              return (
+                <Geography
+                  key={geo.rsmKey}
+                  geography={geo}
+                  fill={getColor(count)}
+                  stroke="#fff"
+                  strokeWidth={0.5}
+                  style={{ default: { outline: 'none' }, hover: { outline: 'none', filter: count ? 'brightness(0.85)' : 'none', cursor: count ? 'pointer' : 'default' }, pressed: { outline: 'none' } }}
+                  onMouseEnter={(e: any) => {
+                    if (!name || !count) return;
+                    const rect = (e.target as SVGElement).closest('svg')!.getBoundingClientRect();
+                    setTooltip({ name, count, pct: Math.round((count / total) * 100), x: e.clientX - rect.left, y: e.clientY - rect.top });
+                  }}
+                  onMouseMove={(e: any) => {
+                    if (!name || !count) return;
+                    const rect = (e.target as SVGElement).closest('svg')!.getBoundingClientRect();
+                    setTooltip(t => t ? { ...t, x: e.clientX - rect.left, y: e.clientY - rect.top } : null);
+                  }}
+                  onMouseLeave={() => setTooltip(null)}
+                />
+              );
+            })}
+          </Geographies>
+        </ZoomableGroup>
+      </ComposableMap>
+
+      {tooltip && (
+        <div
+          className="absolute pointer-events-none z-10 bg-white border border-border rounded-2xl px-3 py-2 shadow-lg text-xs font-black"
+          style={{ left: tooltip.x + 12, top: tooltip.y - 40 }}
+        >
+          <p className="text-text-primary">{tooltip.name}</p>
+          <p className="text-text-muted">{tooltip.count} users · {tooltip.pct}%</p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function AnalyticsPage() {
   const isMobile = useIsMobile();
@@ -258,16 +365,14 @@ export function AnalyticsPage() {
             <ChartCard title="Drop-off" subtitle="Steps where users abandon" className="lg:col-span-4">
               {stats?.dropoffs && stats.dropoffs.length > 0 ? (() => {
                 const DROPOFF_COLORS = ['#ef4444','#f97316','#f59e0b','#84cc16','#22c55e','#06b6d4'];
-                const items = stats.dropoffs.slice(0, 7).map((d, i) => ({
+                const items = stats.dropoffs.map((d, i) => ({
                   name: d.title,
                   count: d.count,
                   color: DROPOFF_COLORS[i % DROPOFF_COLORS.length],
                 }));
-                const othersCount = stats.dropoffs.slice(7).reduce((s, d) => s + d.count, 0);
-                if (othersCount > 0) items.push({ name: 'Others', count: othersCount, color: '#94a3b8' });
                 const totalDropoffs = items.reduce((s, d) => s + d.count, 0) || 1;
                 return (
-                  <div className="flex flex-col gap-2.5 mt-1">
+                  <div className="flex flex-col gap-2.5 mt-1 overflow-y-auto max-h-64 pr-1">
                     {items.map((item, i) => {
                       const pct = Math.round((item.count / totalDropoffs) * 100);
                       return (
@@ -384,9 +489,30 @@ export function AnalyticsPage() {
           </div>
 
           {/* Row 3 */}
-          <div className="grid grid-cols-5 gap-6">
-            <div className="col-span-1 bg-surface rounded-3xl border border-border shadow-(--shadow-card) min-h-150" />
-            <div className="col-span-4 bg-surface rounded-3xl border border-border shadow-(--shadow-card) min-h-150" />
+          <div className="grid grid-cols-10 gap-6 items-stretch">
+            <ChartCard title="Countries" subtitle="Users by IP geolocation" className="col-span-2 flex flex-col h-160" stretch>
+              {stats?.countries && stats.countries.length > 0 ? (() => {
+                const total = stats.countries.reduce((s, c) => s + c.count, 0) || 1;
+                return (
+                  <div className="flex flex-col overflow-y-auto pr-1 min-h-0 h-full">
+                    {stats.countries.map((c) => {
+                      const pct = Math.round((c.count / total) * 100);
+                      return (
+                        <div key={c.label} className="flex items-center justify-between gap-2 py-1.5 border-b border-border last:border-0">
+                          <span className="text-xs font-black text-text-primary truncate">{c.label}</span>
+                          <span className="text-xs font-black text-text-muted shrink-0">{pct}%</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })() : <NoData />}
+            </ChartCard>
+            <ChartCard title="Users by Country" subtitle="IP geolocation heatmap" className="col-span-6 h-160 flex flex-col" stretch>
+              {stats?.countries && stats.countries.length > 0
+                ? <WorldMap countries={stats.countries} />
+                : <NoData />}
+            </ChartCard>
           </div>
         </motion.div>
       )}
@@ -527,14 +653,14 @@ function KpiCard({ label, value, change, icon, color, onClick }: any) {
   );
 }
 
-function ChartCard({ title, subtitle, children, className }: any) {
+function ChartCard({ title, subtitle, children, className, stretch }: any) {
   return (
     <div className={cn("bg-[var(--color-surface)] rounded-[24px] border border-[var(--color-border)] p-4 md:p-5 shadow-[var(--shadow-card)]", className)}>
-      <div className="mb-4">
+      <div className="mb-4 shrink-0">
         <h3 className="text-base font-black text-[var(--color-text-primary)] tracking-tight">{title}</h3>
         <p className="text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mt-0.5">{subtitle}</p>
       </div>
-      {children}
+      {stretch ? <div className="flex-1 flex flex-col min-h-0">{children}</div> : children}
     </div>
   );
 }

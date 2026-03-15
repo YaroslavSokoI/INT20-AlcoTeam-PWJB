@@ -109,6 +109,16 @@ router.get('/stats', async (req: Request, res: Response) => {
       ORDER BY count DESC
     `);
 
+    // Countries (from stored country column)
+    const { rows: countries } = await pool.query<{ label: string; count: number }>(`
+      SELECT COALESCE(country, 'Unknown') AS label, COUNT(*)::int AS count
+      FROM sessions
+      WHERE 1=1 ${dateFilter}
+      GROUP BY label
+      ORDER BY count DESC
+      LIMIT 20
+    `);
+
     res.json({
       totalSessions: totals.total_sessions,
       completedSessions: totals.completed_sessions,
@@ -133,6 +143,7 @@ router.get('/stats', async (req: Request, res: Response) => {
       sources: sources.map(r => ({ label: r.label, count: r.count })),
       languages: languages.map(r => ({ label: r.label, count: r.count })),
       ageRange: ageRange.map(r => ({ label: r.label.replace(/"/g, ''), count: r.count })),
+      countries: countries.map(r => ({ label: r.label, count: r.count })),
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch analytics', detail: String(err) });

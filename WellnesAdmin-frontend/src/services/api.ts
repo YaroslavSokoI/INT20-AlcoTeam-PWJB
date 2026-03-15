@@ -292,4 +292,5 @@ export interface AnalyticsStats {
     languages: ChartItem[];
     ageRange: ChartItem[];
     avgCompletionMin: number | null;
+    countries: ChartItem[];
 }
