@@ -79,6 +79,8 @@ describe('POST /api/user/sessions', () => {
   test('201 — creates session and returns start node', async () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [START_NODE] })   // find start node
+      .mockResolvedValueOnce({ rows: [START_NODE] })   // all nodes (for totalNodes count)
+      .mockResolvedValueOnce({ rows: [] })              // all edges (for totalNodes count)
       .mockResolvedValueOnce({ rows: [SESSION] });      // insert session
 
     const res = await request(app).post('/api/user/sessions');
@@ -86,6 +88,7 @@ describe('POST /api/user/sessions', () => {
     expect(res.status).toBe(201);
     expect(res.body.sessionId).toBe('sess-1');
     expect(res.body.currentNode.id).toBe('node-1');
+    expect(res.body.totalNodes).toBeDefined();
   });
 
   test('500 — no start node configured', async () => {
@@ -310,7 +313,7 @@ describe('GET /api/user/sessions/:id/offer', () => {
     expect(res.status).toBe(200);
     expect(res.body.primary).toHaveLength(1);
     expect(res.body.addon).toBeNull();
-    expect(mockResolveOffers).toHaveBeenCalledWith(COMPLETED_SESSION.attributes);
+    expect(mockResolveOffers).toHaveBeenCalledWith(COMPLETED_SESSION.attributes, undefined);
   });
 
   test('400 — session not yet completed', async () => {
