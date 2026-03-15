@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
   GitGraph, Tag, BarChart2, Eye, Upload,
   CheckCircle2, Menu, X, MoreVertical, Users2,
@@ -15,6 +15,13 @@ import { useIsMobile } from '@/hooks/useResponsive';
 import { LogOut } from 'lucide-react';
 
 type ToastState = { type: 'success' | 'error'; message: string } | null;
+
+const NAV_TABS: { to: string; icon: React.ReactNode; label: string; end?: boolean }[] = [
+  { to: '/', icon: <GitGraph className="w-3.5 h-3.5" />, label: 'Graph Editor', end: true },
+  { to: '/offers', icon: <Tag className="w-3.5 h-3.5" />, label: 'Offers' },
+  { to: '/analytics', icon: <BarChart2 className="w-3.5 h-3.5" />, label: 'Analytics' },
+  { to: '/admins', icon: <Users2 className="w-3.5 h-3.5" />, label: 'Admins' },
+];
 
 export function Topbar() {
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -60,11 +67,10 @@ export function Topbar() {
         </div>
 
         {!isMobile && (
-          <nav className="flex items-center gap-1 flex-1">
-            <TopbarTab to="/" icon={<GitGraph className="w-3.5 h-3.5" />} label="Graph Editor" end />
-            <TopbarTab to="/offers" icon={<Tag className="w-3.5 h-3.5" />} label="Offers" />
-            <TopbarTab to="/analytics" icon={<BarChart2 className="w-3.5 h-3.5" />} label="Analytics" />
-            <TopbarTab to="/admins" icon={<Users2 className="w-3.5 h-3.5" />} label="Admins" />
+          <nav className="flex items-center gap-0.5 flex-1">
+            {NAV_TABS.map(tab => (
+              <TopbarTab key={tab.to} to={tab.to} icon={tab.icon} label={tab.label} end={tab.end} />
+            ))}
           </nav>
         )}
 
@@ -234,20 +240,27 @@ export function Topbar() {
 }
 
 function TopbarTab({ to, icon, label, end }: { to: string; icon: React.ReactNode; label: string; end?: boolean }) {
+  const location = useLocation();
+  const isActive = end ? location.pathname === to : location.pathname.startsWith(to);
+
   return (
     <NavLink
       to={to}
       end={end}
-      className={({ isActive }) =>
-        cn(
-          'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
-          isActive
-            ? 'bg-[var(--color-bg)] text-[var(--color-text-primary)] border border-[var(--color-border)]'
-            : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg)]'
-        )
-      }
+      className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors z-0"
+      style={{ color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)' }}
     >
-      {icon}{label}
+      {isActive && (
+        <motion.span
+          layoutId="topbar-pill"
+          className="absolute inset-0 rounded-lg bg-[var(--color-bg)] border border-[var(--color-border)] shadow-sm"
+          style={{ zIndex: -1 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+        />
+      )}
+      <span className="relative z-10 flex items-center gap-1.5">
+        {icon}{label}
+      </span>
     </NavLink>
   );
 }

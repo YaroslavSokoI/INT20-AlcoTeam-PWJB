@@ -158,38 +158,22 @@ function NodeInspector({ nodeId, initialData, onClose, isMobile }: NodeInspector
 
       <div className="flex-1 overflow-y-auto p-6 md:p-4 space-y-5 pb-32 md:pb-5">
         {/* Language Tabs */}
-        <div className="flex gap-1 p-1 bg-[var(--color-bg)] rounded-xl border border-[var(--color-border)]">
-          {LANGS.map(l => (
-            <button
-              key={l.code}
-              onClick={() => setLang(l.code)}
-              className={cn(
-                'flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all',
-                lang === l.code ? 'bg-white text-black shadow-sm' : 'text-[var(--color-text-secondary)] hover:text-black'
-              )}
-            >
-              {l.label}
-            </button>
-          ))}
-        </div>
+        <PillSegment
+          pillId={`lang-${nodeId}`}
+          options={LANGS.map(l => ({ value: l.code, label: l.label }))}
+          value={lang}
+          onChange={setLang}
+        />
 
         {/* Node Type — only on EN */}
         {!isTranslating && (
           <Section label="Node Type">
-            <div className="grid grid-cols-3 gap-1 p-1 bg-[var(--color-bg)] rounded-xl border border-[var(--color-border)]">
-              {(['question', 'info', 'offer', 'conditional'] as NodeType[]).map(t => (
-                <button
-                  key={t}
-                  onClick={() => update({ nodeType: t })}
-                  className={cn(
-                    'py-1.5 rounded-lg text-[10px] font-bold transition-all capitalize',
-                    data.nodeType === t ? 'bg-white text-black shadow-sm' : 'text-[var(--color-text-secondary)] hover:text-black'
-                  )}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
+            <PillSegment
+              pillId={`nodetype-${nodeId}`}
+              options={(['question', 'info', 'offer', 'conditional'] as NodeType[]).map(t => ({ value: t, label: t }))}
+              value={data.nodeType as string}
+              onChange={v => update({ nodeType: v as NodeType })}
+            />
           </Section>
         )}
 
@@ -224,15 +208,13 @@ function NodeInspector({ nodeId, initialData, onClose, isMobile }: NodeInspector
                   <input value={(data.attribute_key as string) ?? ''} onChange={e => update({ attribute_key: e.target.value })} className={inputCls} placeholder="e.g. goal" />
                 </Section>
                 <Section label="Answer Type">
-                  <div className="flex gap-2 p-1 bg-[var(--color-bg)] rounded-xl border border-[var(--color-border)]">
-                    {(['single', 'multi', 'input'] as const).map(t => (
-                      <button key={t} onClick={() => update({ answerType: t })}
-                        className={cn('flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all capitalize',
-                          data.answerType === t ? 'bg-white text-black shadow-sm' : 'text-[var(--color-text-secondary)] hover:text-black')}
-                      >{t}</button>
-                    ))}
-                  </div>
-                </Section>
+                <PillSegment
+                  pillId={`answertype-${nodeId}`}
+                  options={(['single', 'multi', 'input'] as const).map(t => ({ value: t, label: t }))}
+                  value={data.answerType ?? 'single'}
+                  onChange={v => update({ answerType: v })}
+                />
+              </Section>
               </>
             )}
             {data.answerType !== 'input' && (
@@ -505,6 +487,38 @@ function Section({ label, children }: { label: string; children: React.ReactNode
     <div>
       <label className="block text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--color-text-muted)] mb-2.5 px-1">{label}</label>
       {children}
+    </div>
+  );
+}
+
+function PillSegment<T extends string>({
+  options, value, onChange, pillId,
+}: {
+  options: readonly { value: T; label: string }[];
+  value: T;
+  onChange: (v: T) => void;
+  pillId: string;
+}) {
+  return (
+    <div className="flex gap-0 p-1 bg-[var(--color-bg)] rounded-xl border border-[var(--color-border)]">
+      {options.map(opt => (
+        <button
+          key={opt.value}
+          onClick={() => onChange(opt.value)}
+          className="relative flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-colors z-0"
+          style={{ color: value === opt.value ? 'var(--color-text-primary)' : 'var(--color-text-secondary)' }}
+        >
+          {value === opt.value && (
+            <motion.span
+              layoutId={pillId}
+              className="absolute inset-0 rounded-lg bg-white shadow-sm border border-black/5"
+              style={{ zIndex: -1 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 40 }}
+            />
+          )}
+          <span className="relative z-10">{opt.label}</span>
+        </button>
+      ))}
     </div>
   );
 }
