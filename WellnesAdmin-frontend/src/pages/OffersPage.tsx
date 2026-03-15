@@ -106,13 +106,6 @@ export function OffersPage() {
         </div>
       </div>
 
-      {/* Stats Summary */}
-      <div className="grid grid-cols-3 gap-3 md:gap-4 mb-8">
-        <SummaryCard label="Completed Quiz" value={userStats.completedUsers.toLocaleString()} icon={<CheckCircle className="w-4 h-4" />} color="bg-emerald-50 text-emerald-600" />
-        <SummaryCard label="Accepted Plans" value={userStats.acceptedPlans.toLocaleString()} icon={<Tag className="w-4 h-4" />} color="bg-blue-50 text-blue-600" />
-        <SummaryCard label="Not Accepted" value={(userStats.completedUsers - userStats.acceptedPlans).toLocaleString()} icon={<Users className="w-4 h-4" />} color="bg-orange-50 text-orange-600" />
-      </div>
-
       {/* Filters & Search */}
       <div className="flex flex-col md:flex-row md:items-center gap-3 mb-6">
         <div className="relative flex-1">

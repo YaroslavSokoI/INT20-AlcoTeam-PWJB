@@ -320,7 +320,7 @@ export function AnalyticsPage() {
               {stats?.devices && stats.devices.length > 0 ? (
                 <ResponsiveContainer width="100%" height={220}>
                   <PieChart>
-                    <Pie data={stats.devices} dataKey="count" nameKey="label" cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={3} strokeWidth={0} label={renderPieLabel} labelLine={false}>
+                    <Pie data={stats.devices} dataKey="count" nameKey="label" cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={4} cornerRadius={6} strokeWidth={0} label={renderPieLabel} labelLine={false}>
                       {stats.devices.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                     </Pie>
                     <Tooltip contentStyle={tooltipStyle} formatter={(value: number, _: any, entry: any) => { const total = stats!.devices.reduce((s, d) => s + d.count, 0); return [`${value} (${Math.round((value / total) * 100)}%)`, 'Users']; }} />
@@ -334,7 +334,7 @@ export function AnalyticsPage() {
               {stats?.sources && stats.sources.length > 0 ? (
                 <ResponsiveContainer width="100%" height={220}>
                   <PieChart>
-                    <Pie data={stats.sources} dataKey="count" nameKey="label" cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={3} strokeWidth={0} label={renderPieLabel} labelLine={false}>
+                    <Pie data={stats.sources} dataKey="count" nameKey="label" cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={4} cornerRadius={6} strokeWidth={0} label={renderPieLabel} labelLine={false}>
                       {stats.sources.map((_, i) => <Cell key={i} fill={SOURCE_COLORS[i % SOURCE_COLORS.length]} />)}
                     </Pie>
                     <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => { const total = stats!.sources.reduce((s, d) => s + d.count, 0); return [`${value} (${Math.round((value / total) * 100)}%)`, 'Users']; }} />
@@ -348,7 +348,7 @@ export function AnalyticsPage() {
               {stats?.languages && stats.languages.length > 0 ? (
                 <ResponsiveContainer width="100%" height={220}>
                   <PieChart>
-                    <Pie data={stats.languages} dataKey="count" nameKey="label" cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={3} strokeWidth={0} label={renderPieLabel} labelLine={false}>
+                    <Pie data={stats.languages} dataKey="count" nameKey="label" cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={4} cornerRadius={6} strokeWidth={0} label={renderPieLabel} labelLine={false}>
                       {stats.languages.map((_, i) => <Cell key={i} fill={LANG_COLORS[i % LANG_COLORS.length]} />)}
                     </Pie>
                     <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => { const total = stats!.languages.reduce((s, d) => s + d.count, 0); return [`${value} (${Math.round((value / total) * 100)}%)`, 'Users']; }} />
@@ -368,21 +368,21 @@ export function AnalyticsPage() {
             }));
             return (
               <ChartCard title="Drop-off by Question" subtitle="Percentage of total users who abandoned at each step">
-                <ResponsiveContainer width="100%" height={Math.min(dropoffData.length * 45, 250)}>
-                  <BarChart data={dropoffData} layout="vertical" margin={{ top: 5, right: 20, bottom: 0, left: 10 }}>
+                <ResponsiveContainer width="100%" height={Math.max(dropoffData.length * 64, 100)}>
+                  <BarChart data={dropoffData} layout="vertical" margin={{ top: 8, right: 20, bottom: 8, left: 10 }} barCategoryGap={dropoffData.length === 1 ? '40%' : '30%'}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false} opacity={0.5} />
                     <XAxis type="number" tick={{ fontSize: 10, fill: 'var(--color-text-muted)', fontWeight: 700 }} axisLine={false} tickLine={false} domain={[0, 100]} tickFormatter={(v: number) => `${v}%`} />
                     <YAxis
                       dataKey="attributeKey"
                       type="category"
-                      tick={{ fontSize: 10, fill: 'var(--color-text-primary)', fontWeight: 700 }}
-                      width={90}
+                      tick={{ fontSize: 11, fill: 'var(--color-text-primary)', fontWeight: 700 }}
+                      width={100}
                       axisLine={false}
                       tickLine={false}
                       tickFormatter={(val: string) => val || 'info'}
                     />
                     <Tooltip cursor={{ fill: 'rgba(0,0,0,0.03)' }} contentStyle={tooltipStyle} formatter={(value: number, _: any, entry: any) => [`${value}% (${entry.payload.count} users)`, 'Drop-off']} labelFormatter={(l: string) => l || 'info node'} />
-                    <Bar dataKey="percent" radius={[0, 8, 8, 0]} maxBarSize={24} fill="#ef4444" opacity={0.75} />
+                    <Bar dataKey="percent" radius={[0, 8, 8, 0]} maxBarSize={36} fill="#ef4444" opacity={0.75} />
                   </BarChart>
                 </ResponsiveContainer>
               </ChartCard>
@@ -519,7 +519,7 @@ function KpiCard({ label, value, change, icon, color, onClick }: any) {
         ) : null}
       </div>
       <div className="mt-5 relative z-10">
-        <p className="text-3xl font-black text-[var(--color-text-primary)] leading-none mb-1.5 tracking-tighter truncate">{value}</p>
+        <p className="text-2xl font-black text-[var(--color-text-primary)] leading-tight mb-1.5 tracking-tighter wrap-break-word">{value}</p>
         <p className="text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{label}</p>
       </div>
       <div
