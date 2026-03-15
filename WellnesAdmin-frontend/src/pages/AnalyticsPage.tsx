@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LineChart, Line, BarChart, Bar, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip,
+  LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell, Legend
 } from 'recharts';
 import {
@@ -127,51 +127,6 @@ function exportCSV(stats: AnalyticsStats, range: string) {
   downloadFile(lines.join('\n'), `analytics_${range}.csv`, 'text/csv');
 }
 
-function parseImportedData(text: string, filename: string): Partial<AnalyticsStats> | null {
-  if (filename.endsWith('.json')) {
-    try { return JSON.parse(text); } catch { return null; }
-  }
-  // CSV: parse overview section
-  if (filename.endsWith('.csv')) {
-    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-    const data: any = { topGoals: [], weeklyTrend: [], dropoffs: [], devices: [], sources: [], languages: [] };
-    let section = '';
-    for (const line of lines) {
-      if (line.startsWith('Section,') || line.startsWith('Goal,Count') || line.startsWith('Week,Rate')
-        || line.startsWith('Drop-off Step,') || line.startsWith('Device,Count')
-        || line.startsWith('Source,Count') || line.startsWith('Language,Count')) {
-        if (line.startsWith('Goal')) section = 'goals';
-        else if (line.startsWith('Week')) section = 'trend';
-        else if (line.startsWith('Drop-off')) section = 'dropoffs';
-        else if (line.startsWith('Device')) section = 'devices';
-        else if (line.startsWith('Source')) section = 'sources';
-        else if (line.startsWith('Language')) section = 'languages';
-        else section = 'overview';
-        continue;
-      }
-      const cols = line.split(',');
-      if (section === 'overview') {
-        if (cols[1] === 'Total Sessions') data.totalSessions = parseInt(cols[2]);
-        if (cols[1] === 'Completed Sessions') data.completedSessions = parseInt(cols[2]);
-        if (cols[1] === 'Completion Rate') data.completionRate = parseInt(cols[2]);
-      } else if (section === 'goals') {
-        data.topGoals.push({ label: cols[0], count: parseInt(cols[1]) });
-      } else if (section === 'trend') {
-        data.weeklyTrend.push({ week: cols[0], rate: parseInt(cols[1]) });
-      } else if (section === 'devices') {
-        data.devices.push({ label: cols[0], count: parseInt(cols[1]) });
-      } else if (section === 'sources') {
-        data.sources.push({ label: cols[0], count: parseInt(cols[1]) });
-      } else if (section === 'dropoffs') {
-        data.dropoffs.push({ step: parseInt(cols[0]), title: cols[1]?.replace(/"/g, ''), type: cols[2], attributeKey: cols[3] || null, count: parseInt(cols[4]) });
-      } else if (section === 'languages') {
-        data.languages.push({ label: cols[0], count: parseInt(cols[1]) });
-      }
-    }
-    return data;
-  }
-  return null;
-}
 
 export function AnalyticsPage() {
   const isMobile = useIsMobile();
@@ -195,11 +150,6 @@ export function AnalyticsPage() {
       .finally(() => setLoading(false));
   }, [dateRange]);
 
-  const handleImport = (data: Partial<AnalyticsStats>) => {
-    const full = { totalSessions: 0, completedSessions: 0, completionRate: 0, avgCompletionMin: null, topGoals: [], weeklyTrend: [], dropoffs: [], devices: [], sources: [], languages: [], ageRange: [], ...data } as AnalyticsStats;
-    setImportedStats(full);
-    localStorage.setItem('analytics_imported', JSON.stringify(full));
-  };
 
   const handleClearImport = () => {
     setImportedStats(null);
@@ -250,7 +200,6 @@ export function AnalyticsPage() {
           />
 
           <ExportDropdown stats={stats} dateRange={dateRange} />
-          <ImportButton onImport={handleImport} />
         </div>
       </div>
 
@@ -306,36 +255,44 @@ export function AnalyticsPage() {
               ) : <NoData />}
             </ChartCard>
 
-            <ChartCard title="User Motivation" subtitle="Top selected goal" className="lg:col-span-4">
-              {topGoals.length > 0 ? (() => {
-                const maxCount = Math.max(...topGoals.map(g => g.count));
-                const totalCount = topGoals.reduce((s, g) => s + g.count, 0);
+            <ChartCard title="Drop-off" subtitle="Steps where users abandon" className="lg:col-span-4">
+              {stats?.dropoffs && stats.dropoffs.length > 0 ? (() => {
+                const DROPOFF_COLORS = ['#ef4444','#f97316','#f59e0b','#84cc16','#22c55e','#06b6d4'];
+                const items = stats.dropoffs.slice(0, 7).map((d, i) => ({
+                  name: d.title,
+                  count: d.count,
+                  color: DROPOFF_COLORS[i % DROPOFF_COLORS.length],
+                }));
+                const othersCount = stats.dropoffs.slice(7).reduce((s, d) => s + d.count, 0);
+                if (othersCount > 0) items.push({ name: 'Others', count: othersCount, color: '#94a3b8' });
+                const totalDropoffs = items.reduce((s, d) => s + d.count, 0) || 1;
                 return (
-                  <div className="flex flex-col justify-between" style={{ height: isMobile ? 220 : 280 }}>
-                    {topGoals.map((g, i) => (
-                      <div key={g.label}>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-sm font-bold text-[var(--color-text-primary)]">{g.label}</span>
-                          <span className="text-xs font-black tabular-nums" style={{ color: g.color }}>
-                            {g.count} . {Math.round((g.count / totalCount) * 100)}%
-                          </span>
+                  <div className="flex flex-col gap-2.5 mt-1">
+                    {items.map((item, i) => {
+                      const pct = Math.round((item.count / totalDropoffs) * 100);
+                      return (
+                        <div key={item.name}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-black text-text-primary">{item.name}</span>
+                            <span className="text-xs font-black text-[var(--color-text-muted)]">{pct}%</span>
+                          </div>
+                          <div className="h-2 rounded-full bg-[var(--color-border)] overflow-hidden">
+                            <div
+                              className="h-full rounded-full"
+                              style={{ width: `${pct}%`, background: item.color, transformOrigin: 'left', animation: `barGrow 0.6s cubic-bezier(.4,0,.2,1) ${i * 0.08}s both` }}
+                            />
+                          </div>
                         </div>
-                        <div className="h-2 rounded-full overflow-hidden" style={{ background: g.color + '20' }}>
-                          <div
-                            className="h-full rounded-full"
-                            style={{ width: `${(g.count / maxCount) * 100}%`, background: g.color, transformOrigin: 'left center', animation: `barGrow 0.6s ease-out ${i * 0.1}s both` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 );
               })() : <NoData />}
             </ChartCard>
           </div>
 
-          {/* Row 2: Devices + Source + Languages + Age Range */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Row 2: Devices + Source + Languages + Age Range + Drop-off */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
             <ChartCard title="Devices" subtitle="User device types">
               {stats?.devices && stats.devices.length > 0 ? (
                 <ResponsiveContainer width="100%" height={190}>
@@ -344,7 +301,7 @@ export function AnalyticsPage() {
                       {stats.devices.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                     </Pie>
                     <Tooltip contentStyle={tooltipStyle} formatter={(value: number, _: any, entry: any) => { const total = stats!.devices.reduce((s, d) => s + d.count, 0); return [`${value} (${Math.round((value / total) * 100)}%)`, 'Users']; }} />
-                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, fontWeight: 700 }} />
+                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, fontWeight: 700, paddingTop: 12 }} />
                   </PieChart>
                 </ResponsiveContainer>
               ) : <NoData />}
@@ -358,7 +315,7 @@ export function AnalyticsPage() {
                       {stats.sources.map((_, i) => <Cell key={i} fill={SOURCE_COLORS[i % SOURCE_COLORS.length]} />)}
                     </Pie>
                     <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => { const total = stats!.sources.reduce((s, d) => s + d.count, 0); return [`${value} (${Math.round((value / total) * 100)}%)`, 'Users']; }} />
-                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, fontWeight: 700 }} />
+                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, fontWeight: 700, paddingTop: 12 }} />
                   </PieChart>
                 </ResponsiveContainer>
               ) : <NoData />}
@@ -372,7 +329,7 @@ export function AnalyticsPage() {
                       {stats.languages.map((_, i) => <Cell key={i} fill={LANG_COLORS[i % LANG_COLORS.length]} />)}
                     </Pie>
                     <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => { const total = stats!.languages.reduce((s, d) => s + d.count, 0); return [`${value} (${Math.round((value / total) * 100)}%)`, 'Users']; }} />
-                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, fontWeight: 700 }} />
+                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, fontWeight: 700, paddingTop: 12 }} />
                   </PieChart>
                 </ResponsiveContainer>
               ) : <NoData />}
@@ -391,43 +348,46 @@ export function AnalyticsPage() {
                         {ageData.map((_, i) => <Cell key={i} fill={AGE_C[i % AGE_C.length]} />)}
                       </Pie>
                       <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => [`${value} (${Math.round((value / ageTotal) * 100)}%)`, 'Users']} />
-                      <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, fontWeight: 700 }} />
+                      <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, fontWeight: 700, paddingTop: 12 }} />
                     </PieChart>
                   </ResponsiveContainer>
                 );
               })() : <NoData />}
             </ChartCard>
+
+            <ChartCard title="User Motivation" subtitle="Top goals selected">
+              {topGoals.length > 0 ? (() => {
+                const total = topGoals.reduce((s, g) => s + g.count, 0);
+                return (
+                  <div className="flex flex-col gap-3 mt-1">
+                    {topGoals.map((g, i) => {
+                      const pct = Math.round((g.count / total) * 100);
+                      return (
+                        <div key={g.label}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-black">{g.label}</span>
+                            <span className="text-xs font-black text-text-muted">{pct}%</span>
+                          </div>
+                          <div className="h-2 rounded-full bg-border overflow-hidden">
+                            <div
+                              className="h-full rounded-full"
+                              style={{ width: `${pct}%`, background: g.color, transformOrigin: 'left', animation: `barGrow 0.6s cubic-bezier(.4,0,.2,1) ${i * 0.08}s both` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })() : <NoData />}
+            </ChartCard>
           </div>
 
-          {/* Row 3: Drop-off */}
-          {stats?.dropoffs && stats.dropoffs.length > 0 && (() => {
-            const total = stats.totalSessions || 1;
-            const dropoffData = stats.dropoffs.map(d => ({
-              ...d,
-              percent: Math.round((d.count / total) * 100),
-            }));
-            return (
-              <ChartCard title="Drop-off by Question" subtitle="Percentage of total users who abandoned at each step">
-                <ResponsiveContainer width="100%" height={Math.max(dropoffData.length * 64, 100)}>
-                  <BarChart data={dropoffData} layout="vertical" margin={{ top: 8, right: 20, bottom: 8, left: 10 }} barCategoryGap={dropoffData.length === 1 ? '40%' : '30%'}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false} opacity={0.5} />
-                    <XAxis type="number" tick={{ fontSize: 10, fill: 'var(--color-text-muted)', fontWeight: 700 }} axisLine={false} tickLine={false} domain={[0, 100]} tickFormatter={(v: number) => `${v}%`} />
-                    <YAxis
-                      dataKey="attributeKey"
-                      type="category"
-                      tick={{ fontSize: 13, fill: 'var(--color-text-primary)', fontWeight: 700 }}
-                      width={100}
-                      axisLine={false}
-                      tickLine={false}
-                      tickFormatter={(val: string) => val ? val.charAt(0).toUpperCase() + val.slice(1).replace(/_/g, ' ') : 'Info'}
-                    />
-                    <Tooltip cursor={{ fill: 'rgba(0,0,0,0.03)' }} contentStyle={tooltipStyle} formatter={(value: number, _: any, entry: any) => [`${value}% (${entry.payload.count} users)`, 'Drop-off']} labelFormatter={(l: string) => l ? l.charAt(0).toUpperCase() + l.slice(1).replace(/_/g, ' ') : 'Info node'} />
-                    <Bar dataKey="percent" radius={[0, 8, 8, 0]} maxBarSize={36} fill="#ef4444" opacity={0.75} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartCard>
-            );
-          })()}
+          {/* Row 3 */}
+          <div className="grid grid-cols-5 gap-6">
+            <div className="col-span-1 bg-surface rounded-3xl border border-border shadow-(--shadow-card) min-h-150" />
+            <div className="col-span-4 bg-surface rounded-3xl border border-border shadow-(--shadow-card) min-h-150" />
+          </div>
         </motion.div>
       )}
 
@@ -490,10 +450,7 @@ function FilterDropdown({ label, value, options, icon, onChange }: any) {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-white text-xs font-black text-[var(--color-text-primary)] shadow-sm hover:border-black/20 active:scale-95 transition-all"
       >
-        <div className="flex items-center gap-2 opacity-60">
-          {icon}
-          <span className="uppercase tracking-widest text-[10px] sm:inline hidden">{label}:</span>
-        </div>
+        <span className="opacity-60 flex items-center">{icon}</span>
         <span className="min-w-[70px] text-left">{selectedLabel}</span>
         <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", isOpen && "rotate-180")} />
       </button>
@@ -627,26 +584,3 @@ function ExportDropdown({ stats, dateRange }: { stats: AnalyticsStats | null; da
   );
 }
 
-function ImportButton({ onImport }: { onImport: (data: Partial<AnalyticsStats>) => void }) {
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const text = reader.result as string;
-      const data = parseImportedData(text, file.name);
-      if (data) onImport(data);
-      else alert('Invalid file format. Please use a CSV or JSON file exported from this page.');
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-  };
-
-  return (
-    <label className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-white text-xs font-black text-[var(--color-text-primary)] shadow-sm hover:border-black/20 active:scale-95 transition-all cursor-pointer">
-      <Upload className="w-3.5 h-3.5 opacity-60" />
-      <span>Import</span>
-      <input type="file" accept=".csv,.json" onChange={handleFile} className="hidden" />
-    </label>
-  );
-}

@@ -42,14 +42,20 @@ router.get('/stats', async (req: Request, res: Response) => {
       LIMIT 5
     `);
 
-    // Weekly completion trend (last 8 weeks)
+    // Weekly completion trend
+    let trendFilter: string;
+    if (range === '7D') trendFilter = "WHERE created_at >= NOW() - INTERVAL '7 days'";
+    else if (range === '30D') trendFilter = "WHERE created_at >= NOW() - INTERVAL '30 days'";
+    else if (range === '90D') trendFilter = "WHERE created_at >= NOW() - INTERVAL '90 days'";
+    else trendFilter = 'WHERE 1=1';
+
     const { rows: weeklyTrend } = await pool.query<{ week: string; total: number; completed: number }>(`
       SELECT
         TO_CHAR(date_trunc('week', created_at), 'IYYY-"W"IW') AS week,
         COUNT(*)::int AS total,
         COUNT(*) FILTER (WHERE completed = TRUE)::int AS completed
       FROM sessions
-      WHERE created_at >= NOW() - INTERVAL '8 weeks'
+      ${trendFilter}
       GROUP BY week
       ORDER BY week
     `);
