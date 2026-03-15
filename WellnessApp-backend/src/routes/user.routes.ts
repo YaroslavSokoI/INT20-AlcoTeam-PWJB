@@ -7,6 +7,27 @@ import type { DbNode, DbEdge, Session, SubmitAnswerBody } from '../types/index.j
 
 const router = Router();
 
+// Apply translations to a node based on language
+function applyLang<T extends { translations?: Record<string, Record<string, unknown>>; title?: string; description?: string; options?: any[]; cta_text?: string; digital_plan?: string; physical_kit?: string; why_text?: string }>(node: T | null, lang?: string): T | null {
+  if (!node || !lang || lang === 'en') return node;
+  const t = node.translations?.[lang];
+  if (!t) return node;
+  const result = { ...node };
+  if (t.title) (result as any).title = t.title;
+  if (t.description) (result as any).description = t.description;
+  if (t.cta_text) (result as any).cta_text = t.cta_text;
+  if (t.digital_plan) (result as any).digital_plan = t.digital_plan;
+  if (t.physical_kit) (result as any).physical_kit = t.physical_kit;
+  if (t.why_text) (result as any).why_text = t.why_text;
+  if (Array.isArray(t.options) && Array.isArray(result.options)) {
+    result.options = result.options.map((opt: any, i: number) => {
+      const tOpt = (t.options as any[])[i];
+      return tOpt?.label ? { ...opt, label: tOpt.label } : opt;
+    });
+  }
+  return result;
+}
+
 // ---- POST /api/user/sessions ----------------------------
 // Create a new quiz session and return the first (start) node.
 router.post('/sessions', async (req: Request, res: Response) => {
@@ -48,10 +69,34 @@ router.post('/sessions', async (req: Request, res: Response) => {
       return res.status(500).json({ error: 'Failed to resolve an interactive start node' });
     }
 
-    const { rows: countRows } = await pool.query<{ count: string }>(
-      "SELECT COUNT(*) as count FROM published_nodes_full WHERE type = 'question'",
-    );
-    const totalNodes = parseInt(countRows[0].count, 10);
+    // Walk the graph from start and count question nodes, taking the longest branch at conditionals
+    const { rows: allNodes } = await pool.query<DbNode>('SELECT * FROM published_nodes_full');
+    const { rows: allEdges } = await pool.query<DbEdge>('SELECT * FROM published_edges');
+    const nodeMap = new Map(allNodes.map(n => [n.id, n]));
+    const edgeMap = new Map<string, DbEdge[]>();
+    for (const e of allEdges) {
+      const list = edgeMap.get(e.source_node_id) || [];
+      list.push(e);
+      edgeMap.set(e.source_node_id, list);
+    }
+
+    function countQuestions(nodeId: string, visited: Set<string>): number {
+      if (visited.has(nodeId)) return 0;
+      const n = nodeMap.get(nodeId);
+      if (!n) return 0;
+      visited.add(nodeId);
+      const count = n.type === 'question' ? 1 : 0;
+      const outEdges: DbEdge[] = edgeMap.get(nodeId) || [];
+      if (outEdges.length === 0) return count;
+      // For any node with multiple outgoing edges, take the longest branch
+      let max = 0;
+      for (const edge of outEdges) {
+        max = Math.max(max, countQuestions(edge.target_node_id, new Set(visited)));
+      }
+      return count + max;
+    }
+
+    const totalNodes = countQuestions(resolvedNode.id, new Set()) + 1;
 
     // Parse user metadata
     const userAgent = req.headers['user-agent'] || '';
@@ -93,7 +138,8 @@ router.post('/sessions', async (req: Request, res: Response) => {
     );
     const session = rows[0];
 
-    res.status(201).json({ sessionId: session.id, currentNode: resolvedNode, totalNodes });
+    const lang = (req.query.lang as string) || undefined;
+    res.status(201).json({ sessionId: session.id, currentNode: applyLang(resolvedNode, lang), totalNodes });
   } catch (err) {
     res.status(500).json({ error: 'Failed to create session', detail: String(err) });
   }
@@ -120,7 +166,8 @@ router.get('/sessions/:id', async (req: Request, res: Response) => {
       currentNode = nodes[0] ?? null;
     }
 
-    res.json({ session, currentNode });
+    const lang = (req.query.lang as string) || undefined;
+    res.json({ session, currentNode: applyLang(currentNode, lang) });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch session', detail: String(err) });
   }
@@ -131,6 +178,7 @@ router.get('/sessions/:id', async (req: Request, res: Response) => {
 router.post('/sessions/:id/answer', async (req: Request, res: Response) => {
   try {
     const sessionId = req.params.id;
+    const lang = (req.query.lang as string) || undefined;
     const body = req.body as SubmitAnswerBody;
 
     if (!body.node_id || body.value === undefined) {
@@ -232,7 +280,7 @@ router.post('/sessions/:id/answer', async (req: Request, res: Response) => {
       [nextNode.id, sessionId],
     );
 
-    res.json({ completed: false, nextNode });
+    res.json({ completed: false, nextNode: applyLang(nextNode, lang) });
   } catch (err) {
     res.status(500).json({ error: 'Failed to process answer', detail: String(err) });
   }
@@ -300,7 +348,8 @@ router.post('/sessions/:id/back', async (req: Request, res: Response) => {
     );
     const previousNode = previousNodes[0] ?? null;
 
-    res.json({ currentNode: previousNode });
+    const lang = (req.query.lang as string) || undefined;
+    res.json({ currentNode: applyLang(previousNode, lang) });
   } catch (err) {
     res.status(500).json({ error: 'Failed to go back', detail: String(err) });
   }
@@ -321,7 +370,8 @@ router.get('/sessions/:id/offer', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Session is not yet completed' });
     }
 
-    const result = await resolveOffers(session.attributes);
+    const lang = (req.query.lang as string) || undefined;
+    const result = await resolveOffers(session.attributes, lang);
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: 'Failed to resolve offer', detail: String(err) });

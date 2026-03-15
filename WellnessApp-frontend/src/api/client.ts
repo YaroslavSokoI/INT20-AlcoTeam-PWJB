@@ -61,29 +61,37 @@ function collectMetadata() {
   };
 }
 
+function getLang(): string {
+  return localStorage.getItem('quiz-lang') || 'en';
+}
+
 export const api = {
+  getSession(sessionId: string): Promise<{ session: any; currentNode: QuizNode | null }> {
+    return request(`/user/sessions/${sessionId}?lang=${getLang()}`);
+  },
+
   createSession(): Promise<StartSessionResponse> {
-    return request('/user/sessions', {
+    return request(`/user/sessions?lang=${getLang()}`, {
       method: 'POST',
       body: JSON.stringify({ metadata: collectMetadata() }),
     });
   },
 
   submitAnswer(sessionId: string, body: SubmitAnswerBody): Promise<AnswerResponse> {
-    return request(`/user/sessions/${sessionId}/answer`, {
+    return request(`/user/sessions/${sessionId}/answer?lang=${getLang()}`, {
       method: 'POST',
       body: JSON.stringify(body),
     });
   },
 
   goBack(sessionId: string): Promise<BackResponse> {
-    return request(`/user/sessions/${sessionId}/back`, {
+    return request(`/user/sessions/${sessionId}/back?lang=${getLang()}`, {
       method: 'POST',
     });
   },
 
   getOffer(sessionId: string): Promise<OfferResult> {
-    return request(`/user/sessions/${sessionId}/offer`);
+    return request(`/user/sessions/${sessionId}/offer?lang=${getLang()}`);
   },
 
   acceptOffer(sessionId: string): Promise<{ success: boolean }> {

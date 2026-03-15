@@ -36,27 +36,28 @@ export async function createNode(data: CreateNodeBody): Promise<DbNode> {
     switch (data.type) {
       case 'question':
         await client.query(
-          `INSERT INTO question_nodes (node_id, title, question_type, options, attribute_key)
-           VALUES ($1, $2, $3, $4, $5)`,
+          `INSERT INTO question_nodes (node_id, title, question_type, options, attribute_key, translations)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
           [
             nodeId,
             data.title ?? '',
             data.question_type ?? null,
             data.options ? JSON.stringify(data.options) : null,
             data.attribute_key ?? null,
+            data.translations ? JSON.stringify(data.translations) : '{}',
           ],
         );
         break;
       case 'info':
         await client.query(
-          `INSERT INTO info_nodes (node_id, title, content) VALUES ($1, $2, $3)`,
-          [nodeId, data.title ?? '', data.description ?? null],
+          `INSERT INTO info_nodes (node_id, title, content, translations) VALUES ($1, $2, $3, $4)`,
+          [nodeId, data.title ?? '', data.description ?? null, data.translations ? JSON.stringify(data.translations) : '{}'],
         );
         break;
       case 'offer':
         await client.query(
-          `INSERT INTO offer_nodes (node_id, title, description, cta_text, slug, digital_plan, physical_kit, why_text, conditions, priority)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+          `INSERT INTO offer_nodes (node_id, title, description, cta_text, slug, digital_plan, physical_kit, why_text, conditions, priority, translations)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
           [
             nodeId,
             data.title ?? '',
@@ -68,13 +69,14 @@ export async function createNode(data: CreateNodeBody): Promise<DbNode> {
             data.why_text ?? null,
             data.offer_conditions != null ? JSON.stringify(data.offer_conditions) : null,
             data.offer_priority ?? 0,
+            data.translations ? JSON.stringify(data.translations) : '{}',
           ],
         );
         break;
       case 'conditional':
         await client.query(
-          `INSERT INTO conditional_nodes (node_id, title) VALUES ($1, $2)`,
-          [nodeId, data.title ?? ''],
+          `INSERT INTO conditional_nodes (node_id, title, translations) VALUES ($1, $2, $3)`,
+          [nodeId, data.title ?? '', data.translations ? JSON.stringify(data.translations) : '{}'],
         );
         break;
     }
@@ -132,6 +134,7 @@ export async function updateNode(id: string, data: Partial<CreateNodeBody>): Pro
         if ('question_type' in data) { qFields.push(`question_type = $${qi++}`); qValues.push(data.question_type ?? null); }
         if ('options' in data) { qFields.push(`options = $${qi++}`); qValues.push(data.options ? JSON.stringify(data.options) : null); }
         if ('attribute_key' in data) { qFields.push(`attribute_key = $${qi++}`); qValues.push(data.attribute_key ?? null); }
+        if ('translations' in data) { qFields.push(`translations = $${qi++}`); qValues.push(JSON.stringify(data.translations ?? {})); }
         if (qFields.length > 0) {
           qValues.push(id);
           await client.query(
@@ -147,6 +150,7 @@ export async function updateNode(id: string, data: Partial<CreateNodeBody>): Pro
         let ii = 1;
         if ('title' in data) { iFields.push(`title = $${ii++}`); iValues.push(data.title); }
         if ('description' in data) { iFields.push(`content = $${ii++}`); iValues.push(data.description ?? null); }
+        if ('translations' in data) { iFields.push(`translations = $${ii++}`); iValues.push(JSON.stringify(data.translations ?? {})); }
         if (iFields.length > 0) {
           iValues.push(id);
           await client.query(
@@ -172,6 +176,7 @@ export async function updateNode(id: string, data: Partial<CreateNodeBody>): Pro
           oValues.push(data.offer_conditions != null ? JSON.stringify(data.offer_conditions) : null);
         }
         if ('offer_priority' in data) { oFields.push(`priority = $${oi++}`); oValues.push(data.offer_priority ?? 0); }
+        if ('translations' in data) { oFields.push(`translations = $${oi++}`); oValues.push(JSON.stringify(data.translations ?? {})); }
         if (oFields.length > 0) {
           oValues.push(id);
           await client.query(
@@ -182,10 +187,16 @@ export async function updateNode(id: string, data: Partial<CreateNodeBody>): Pro
         break;
       }
       case 'conditional': {
-        if ('title' in data) {
+        const cFields: string[] = [];
+        const cValues: unknown[] = [];
+        let ci = 1;
+        if ('title' in data) { cFields.push(`title = $${ci++}`); cValues.push(data.title); }
+        if ('translations' in data) { cFields.push(`translations = $${ci++}`); cValues.push(JSON.stringify(data.translations ?? {})); }
+        if (cFields.length > 0) {
+          cValues.push(id);
           await client.query(
-            `UPDATE conditional_nodes SET title = $1 WHERE node_id = $2`,
-            [data.title, id],
+            `UPDATE conditional_nodes SET ${cFields.join(', ')} WHERE node_id = $${ci}`,
+            cValues,
           );
         }
         break;

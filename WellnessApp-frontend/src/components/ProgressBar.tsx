@@ -10,7 +10,7 @@ export function ProgressBar({ currentStep, totalSteps }: Props) {
   return (
     <div className="w-full flex items-center justify-between gap-1.5 mb-4 lg:mb-6 shrink-0">
       {segments.map((index) => {
-        const isActive = index <= currentStep;
+        const isActive = index < currentStep;
         return (
           <div
             key={index}

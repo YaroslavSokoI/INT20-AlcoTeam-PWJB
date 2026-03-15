@@ -36,6 +36,7 @@ export interface BackendNode {
     options?: Array<{ value: string; label: string; icon?: string }>;
     attribute_key?: string;
     cta_text?: string;
+    translations?: Record<string, Record<string, unknown>>;
     pos_x: number;
     pos_y: number;
     is_start: boolean;
@@ -112,6 +113,7 @@ export function mapBackendNodeToFrontend(beNode: BackendNode): FlowNode {
             offerTitle: beNode.title,
             offerDescription: beNode.description || '',
             ctaText: beNode.cta_text || '',
+            translations: beNode.translations || {},
         },
     };
 }

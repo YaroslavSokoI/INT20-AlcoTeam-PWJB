@@ -27,6 +27,7 @@ export interface FlowNodeData {
   offerDescription?: string;
   ctaText?: string;
   badge?: string;
+  translations?: Record<string, Record<string, unknown>>;
   [key: string]: unknown;
 }
 

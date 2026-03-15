@@ -30,20 +30,20 @@ router.post('/', async (_req: Request, res: Response) => {
 
     // Copy type-specific tables
     await client.query(`
-      INSERT INTO published_question_nodes (node_id, title, question_type, options, attribute_key)
-      SELECT node_id, title, question_type, options, attribute_key FROM question_nodes
+      INSERT INTO published_question_nodes (node_id, title, question_type, options, attribute_key, translations)
+      SELECT node_id, title, question_type, options, attribute_key, translations FROM question_nodes
     `);
     await client.query(`
-      INSERT INTO published_info_nodes (node_id, title, content)
-      SELECT node_id, title, content FROM info_nodes
+      INSERT INTO published_info_nodes (node_id, title, content, translations)
+      SELECT node_id, title, content, translations FROM info_nodes
     `);
     await client.query(`
-      INSERT INTO published_offer_nodes (node_id, title, description, cta_text, slug, digital_plan, physical_kit, why_text, conditions, priority)
-      SELECT node_id, title, description, cta_text, slug, digital_plan, physical_kit, why_text, conditions, priority FROM offer_nodes
+      INSERT INTO published_offer_nodes (node_id, title, description, cta_text, slug, digital_plan, physical_kit, why_text, conditions, priority, translations)
+      SELECT node_id, title, description, cta_text, slug, digital_plan, physical_kit, why_text, conditions, priority, translations FROM offer_nodes
     `);
     await client.query(`
-      INSERT INTO published_conditional_nodes (node_id, title)
-      SELECT node_id, title FROM conditional_nodes
+      INSERT INTO published_conditional_nodes (node_id, title, translations)
+      SELECT node_id, title, translations FROM conditional_nodes
     `);
     // Copy edges
     await client.query(`INSERT INTO published_edges SELECT * FROM edges`);

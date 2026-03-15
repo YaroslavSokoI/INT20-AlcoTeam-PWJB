@@ -23,6 +23,7 @@ export function mapFrontendNodeToBackend(node: FlowNode): Partial<BackendNode> {
         pos_x: Math.round(node.position.x),
         pos_y: Math.round(node.position.y),
         is_start: !!node.data.is_start,
+        translations: node.data.translations || {},
     };
 }
 

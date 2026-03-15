@@ -84,5 +84,15 @@ export function useQuiz() {
     }
   }, [sessionId, stepCount]);
 
-  return { stage, sessionId, currentNode, offerResult, error, hasHistory, stepCount, totalSteps, startQuiz, beginQuiz, goToWelcome, submitAnswer, goBack };
+  const refreshNode = useCallback(async () => {
+    if (!sessionId || stage !== 'quiz') return;
+    try {
+      const { currentNode: node } = await api.getSession(sessionId);
+      if (node) setCurrentNode(node);
+    } catch {
+      // ignore — non-critical
+    }
+  }, [sessionId, stage]);
+
+  return { stage, sessionId, currentNode, offerResult, error, hasHistory, stepCount, totalSteps, startQuiz, beginQuiz, goToWelcome, submitAnswer, goBack, refreshNode };
 }

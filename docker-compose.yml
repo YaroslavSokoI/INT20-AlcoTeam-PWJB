@@ -10,6 +10,7 @@ services:
       - ./db/002_seed.sql:/docker-entrypoint-initdb.d/002_seed.sql
       - ./db/006_published_tables.sql:/docker-entrypoint-initdb.d/003_published_tables.sql
       - ./db/007_offer_accepted.sql:/docker-entrypoint-initdb.d/004_offer_accepted.sql
+      - ./db/008_translations.sql:/docker-entrypoint-initdb.d/005_translations.sql
       - pgdata:/var/lib/postgresql/data
     ports:
       - "5432:5432"

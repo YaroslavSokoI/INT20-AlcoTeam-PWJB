@@ -15,6 +15,7 @@ export interface DbNode {
   question_type?: QuestionType;
   options?: NodeOption[];
   attribute_key?: string;
+  translations?: Record<string, Record<string, unknown>>;
   pos_x: number;
   pos_y: number;
   is_start: boolean;
@@ -45,6 +46,7 @@ export interface DbOffer {
   why_text?: string;
   offer_conditions: Condition | null;
   offer_priority: number;
+  translations?: Record<string, Record<string, unknown>>;
   created_at: string;
 }
 

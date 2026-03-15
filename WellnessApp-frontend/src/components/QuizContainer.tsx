@@ -1,4 +1,5 @@
 import { useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { useQuiz } from '../hooks/useQuiz';
 import { WelcomeScreen } from './WelcomeScreen';
@@ -10,11 +11,17 @@ import { Header } from './Header';
 import { LoadingSpinner } from './LoadingSpinner';
 
 export function QuizContainer() {
-  const { stage, sessionId, currentNode, offerResult, error, hasHistory, stepCount, totalSteps, startQuiz, beginQuiz, goToWelcome, submitAnswer, goBack } = useQuiz();
+  const { stage, sessionId, currentNode, offerResult, error, hasHistory, stepCount, totalSteps, startQuiz, beginQuiz, goToWelcome, submitAnswer, goBack, refreshNode } = useQuiz();
+  const { i18n } = useTranslation();
 
   useEffect(() => {
     startQuiz();
   }, [startQuiz]);
+
+  // Re-fetch current node when user changes language
+  useEffect(() => {
+    refreshNode();
+  }, [i18n.language]);
 
   const handleBack = useCallback(() => {
     if (!hasHistory) {

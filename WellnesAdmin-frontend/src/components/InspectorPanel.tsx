@@ -93,12 +93,39 @@ interface NodeInspectorProps {
   isMobile?: boolean;
 }
 
+const LANGS = [
+  { code: 'en', label: 'EN' },
+  { code: 'uk', label: 'UK' },
+  { code: 'ru', label: 'RU' },
+] as const;
+
 function NodeInspector({ nodeId, initialData, onClose, isMobile }: NodeInspectorProps) {
   const [data, setData] = useState<FlowNodeData>({ ...initialData });
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [lang, setLang] = useState<string>('en');
   const { updateNodeData, deleteNode } = useFlowStore();
 
   const update = (patch: Partial<FlowNodeData>) => setData(d => ({ ...d, ...patch }));
+
+  const translations = (data.translations ?? {}) as Record<string, Record<string, unknown>>;
+  const setTranslation = (field: string, value: string) => {
+    const langData = { ...(translations[lang] || {}), [field]: value };
+    update({ translations: { ...translations, [lang]: langData } });
+  };
+  const getTranslation = (field: string): string => {
+    return ((translations[lang] || {}) as Record<string, string>)[field] ?? '';
+  };
+  const getTranslatedOptions = (): { value: string; label: string }[] => {
+    return ((translations[lang] || {}) as any).options ?? [];
+  };
+  const setTranslatedOptionLabel = (index: number, label: string) => {
+    const opts = [...getTranslatedOptions()];
+    const enOpts = data.options ?? [];
+    // Ensure array is right size
+    while (opts.length < enOpts.length) opts.push({ value: enOpts[opts.length]?.value ?? '', label: '' });
+    opts[index] = { ...opts[index], label };
+    setTranslation('options', opts as any);
+  };
 
   const handleSave = useCallback(() => {
     updateNodeData(nodeId, data);
@@ -124,65 +151,119 @@ function NodeInspector({ nodeId, initialData, onClose, isMobile }: NodeInspector
     update({ options: (data.options ?? []).filter(o => o.id !== id) });
 
   const meta = NODE_TYPE_META[data.nodeType];
+  const isTranslating = lang !== 'en';
 
   return (
     <>
       <InspectorHeader label="Edit Node" badge={`#${shortId(nodeId)}`} color={meta.color} onClose={onClose} />
 
       <div className="flex-1 overflow-y-auto p-6 md:p-4 space-y-5 pb-32 md:pb-5">
-        {/* Node Type */}
-        <Section label="Node Type">
-          <div className="grid grid-cols-3 gap-1 p-1 bg-[var(--color-bg)] rounded-xl border border-[var(--color-border)]">
-            {(['question', 'info', 'offer', 'conditional'] as NodeType[]).map(t => (
-              <button
-                key={t}
-                onClick={() => update({ nodeType: t })}
-                className={cn(
-                  'py-1.5 rounded-lg text-[10px] font-bold transition-all capitalize',
-                  data.nodeType === t ? 'bg-white text-black shadow-sm' : 'text-[var(--color-text-secondary)] hover:text-black'
-                )}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-        </Section>
+        {/* Language Tabs */}
+        <div className="flex gap-1 p-1 bg-[var(--color-bg)] rounded-xl border border-[var(--color-border)]">
+          {LANGS.map(l => (
+            <button
+              key={l.code}
+              onClick={() => setLang(l.code)}
+              className={cn(
+                'flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all',
+                lang === l.code ? 'bg-white text-black shadow-sm' : 'text-[var(--color-text-secondary)] hover:text-black'
+              )}
+            >
+              {l.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Node Type — only on EN */}
+        {!isTranslating && (
+          <Section label="Node Type">
+            <div className="grid grid-cols-3 gap-1 p-1 bg-[var(--color-bg)] rounded-xl border border-[var(--color-border)]">
+              {(['question', 'info', 'offer', 'conditional'] as NodeType[]).map(t => (
+                <button
+                  key={t}
+                  onClick={() => update({ nodeType: t })}
+                  className={cn(
+                    'py-1.5 rounded-lg text-[10px] font-bold transition-all capitalize',
+                    data.nodeType === t ? 'bg-white text-black shadow-sm' : 'text-[var(--color-text-secondary)] hover:text-black'
+                  )}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </Section>
+        )}
 
         {/* Question */}
         {data.nodeType === 'question' && (
           <>
             <Section label="Question Text">
-              <textarea
-                value={data.questionText ?? ''}
-                onChange={e => update({ questionText: e.target.value, label: e.target.value })}
-                rows={isMobile ? 3 : 2}
-                className={inputCls + ' resize-none'}
-                placeholder="Enter your question..."
-              />
+              {isTranslating ? (
+                <>
+                  <p className="text-[9px] text-[var(--color-text-muted)] mb-1 italic">EN: {data.questionText}</p>
+                  <textarea
+                    value={getTranslation('title')}
+                    onChange={e => setTranslation('title', e.target.value)}
+                    rows={isMobile ? 3 : 2}
+                    className={inputCls + ' resize-none'}
+                    placeholder={`Translation (${lang.toUpperCase()})...`}
+                  />
+                </>
+              ) : (
+                <textarea
+                  value={data.questionText ?? ''}
+                  onChange={e => update({ questionText: e.target.value, label: e.target.value })}
+                  rows={isMobile ? 3 : 2}
+                  className={inputCls + ' resize-none'}
+                  placeholder="Enter your question..."
+                />
+              )}
             </Section>
-            <Section label="Attribute Key">
-              <input value={(data.attribute_key as string) ?? ''} onChange={e => update({ attribute_key: e.target.value })} className={inputCls} placeholder="e.g. goal" />
-            </Section>
-            <Section label="Answer Type">
-              <div className="flex gap-2 p-1 bg-[var(--color-bg)] rounded-xl border border-[var(--color-border)]">
-                {(['single', 'multi', 'input'] as const).map(t => (
-                  <button key={t} onClick={() => update({ answerType: t })}
-                    className={cn('flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all capitalize',
-                      data.answerType === t ? 'bg-white text-black shadow-sm' : 'text-[var(--color-text-secondary)] hover:text-black')}
-                  >{t}</button>
-                ))}
-              </div>
-            </Section>
+            {!isTranslating && (
+              <>
+                <Section label="Attribute Key">
+                  <input value={(data.attribute_key as string) ?? ''} onChange={e => update({ attribute_key: e.target.value })} className={inputCls} placeholder="e.g. goal" />
+                </Section>
+                <Section label="Answer Type">
+                  <div className="flex gap-2 p-1 bg-[var(--color-bg)] rounded-xl border border-[var(--color-border)]">
+                    {(['single', 'multi', 'input'] as const).map(t => (
+                      <button key={t} onClick={() => update({ answerType: t })}
+                        className={cn('flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all capitalize',
+                          data.answerType === t ? 'bg-white text-black shadow-sm' : 'text-[var(--color-text-secondary)] hover:text-black')}
+                      >{t}</button>
+                    ))}
+                  </div>
+                </Section>
+              </>
+            )}
             {data.answerType !== 'input' && (
-              <Section label="Answer Options">
-                <div className="space-y-2">
-                  {(data.options ?? []).map((opt, i) => (
-                    <OptionRow key={opt.id} option={opt} index={i} onChange={patch => updateOption(opt.id, patch)} onRemove={() => removeOption(opt.id)} />
-                  ))}
-                </div>
-                <button onClick={addOption} className="mt-3 w-full py-2.5 rounded-xl border border-dashed border-[var(--color-border-2)] text-xs font-bold text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)] flex items-center justify-center gap-1.5">
-                  <Plus className="w-4 h-4" /> Add option
-                </button>
+              <Section label={isTranslating ? 'Option Translations' : 'Answer Options'}>
+                {isTranslating ? (
+                  <div className="space-y-2">
+                    {(data.options ?? []).map((opt, i) => (
+                      <div key={opt.id} className="space-y-1">
+                        <p className="text-[9px] text-[var(--color-text-muted)] ml-1 italic">EN: {opt.label}</p>
+                        <input
+                          value={getTranslatedOptions()[i]?.label ?? ''}
+                          onChange={e => setTranslatedOptionLabel(i, e.target.value)}
+                          className={inputCls}
+                          placeholder={`Translation (${lang.toUpperCase()})...`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-2">
+                      {(data.options ?? []).map((opt, i) => (
+                        <OptionRow key={opt.id} option={opt} index={i} onChange={patch => updateOption(opt.id, patch)} onRemove={() => removeOption(opt.id)} />
+                      ))}
+                    </div>
+                    <button onClick={addOption} className="mt-3 w-full py-2.5 rounded-xl border border-dashed border-[var(--color-border-2)] text-xs font-bold text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)] flex items-center justify-center gap-1.5">
+                      <Plus className="w-4 h-4" /> Add option
+                    </button>
+                  </>
+                )}
               </Section>
             )}
           </>
@@ -192,10 +273,24 @@ function NodeInspector({ nodeId, initialData, onClose, isMobile }: NodeInspector
         {data.nodeType === 'info' && (
           <>
             <Section label="Title">
-              <input value={data.label} onChange={e => update({ label: e.target.value })} className={inputCls} placeholder="Title..." />
+              {isTranslating ? (
+                <>
+                  <p className="text-[9px] text-[var(--color-text-muted)] mb-1 italic">EN: {data.label}</p>
+                  <input value={getTranslation('title')} onChange={e => setTranslation('title', e.target.value)} className={inputCls} placeholder={`Translation (${lang.toUpperCase()})...`} />
+                </>
+              ) : (
+                <input value={data.label} onChange={e => update({ label: e.target.value })} className={inputCls} placeholder="Title..." />
+              )}
             </Section>
             <Section label="Content">
-              <textarea value={data.content ?? ''} onChange={e => update({ content: e.target.value })} rows={isMobile ? 5 : 4} className={inputCls + ' resize-none'} placeholder="Content..." />
+              {isTranslating ? (
+                <>
+                  <p className="text-[9px] text-[var(--color-text-muted)] mb-1 italic">EN: {(data.content ?? '').slice(0, 60)}...</p>
+                  <textarea value={getTranslation('description')} onChange={e => setTranslation('description', e.target.value)} rows={isMobile ? 5 : 4} className={inputCls + ' resize-none'} placeholder={`Translation (${lang.toUpperCase()})...`} />
+                </>
+              ) : (
+                <textarea value={data.content ?? ''} onChange={e => update({ content: e.target.value })} rows={isMobile ? 5 : 4} className={inputCls + ' resize-none'} placeholder="Content..." />
+              )}
             </Section>
           </>
         )}
@@ -204,16 +299,39 @@ function NodeInspector({ nodeId, initialData, onClose, isMobile }: NodeInspector
         {data.nodeType === 'offer' && (
           <>
             <Section label="Offer Title">
-              <input value={data.offerTitle ?? ''} onChange={e => update({ offerTitle: e.target.value, label: e.target.value })} className={inputCls} placeholder="Offer headline..." />
+              {isTranslating ? (
+                <>
+                  <p className="text-[9px] text-[var(--color-text-muted)] mb-1 italic">EN: {data.offerTitle}</p>
+                  <input value={getTranslation('title')} onChange={e => setTranslation('title', e.target.value)} className={inputCls} placeholder={`Translation (${lang.toUpperCase()})...`} />
+                </>
+              ) : (
+                <input value={data.offerTitle ?? ''} onChange={e => update({ offerTitle: e.target.value, label: e.target.value })} className={inputCls} placeholder="Offer headline..." />
+              )}
             </Section>
-            <Section label="Attribute Key (slug)">
-              <input value={(data.attribute_key as string) ?? ''} onChange={e => update({ attribute_key: e.target.value })} className={inputCls} placeholder="e.g. weight-loss-starter" />
-            </Section>
+            {!isTranslating && (
+              <Section label="Attribute Key (slug)">
+                <input value={(data.attribute_key as string) ?? ''} onChange={e => update({ attribute_key: e.target.value })} className={inputCls} placeholder="e.g. weight-loss-starter" />
+              </Section>
+            )}
             <Section label="Description">
-              <textarea value={data.offerDescription ?? ''} onChange={e => update({ offerDescription: e.target.value })} rows={3} className={inputCls + ' resize-none'} placeholder="Description..." />
+              {isTranslating ? (
+                <>
+                  <p className="text-[9px] text-[var(--color-text-muted)] mb-1 italic">EN: {(data.offerDescription ?? '').slice(0, 60)}...</p>
+                  <textarea value={getTranslation('description')} onChange={e => setTranslation('description', e.target.value)} rows={3} className={inputCls + ' resize-none'} placeholder={`Translation (${lang.toUpperCase()})...`} />
+                </>
+              ) : (
+                <textarea value={data.offerDescription ?? ''} onChange={e => update({ offerDescription: e.target.value })} rows={3} className={inputCls + ' resize-none'} placeholder="Description..." />
+              )}
             </Section>
             <Section label="CTA Button">
-              <input value={data.ctaText ?? ''} onChange={e => update({ ctaText: e.target.value })} className={inputCls} placeholder="Get My Plan" />
+              {isTranslating ? (
+                <>
+                  <p className="text-[9px] text-[var(--color-text-muted)] mb-1 italic">EN: {data.ctaText}</p>
+                  <input value={getTranslation('cta_text')} onChange={e => setTranslation('cta_text', e.target.value)} className={inputCls} placeholder={`Translation (${lang.toUpperCase()})...`} />
+                </>
+              ) : (
+                <input value={data.ctaText ?? ''} onChange={e => update({ ctaText: e.target.value })} className={inputCls} placeholder="Get My Plan" />
+              )}
             </Section>
           </>
         )}
@@ -222,7 +340,14 @@ function NodeInspector({ nodeId, initialData, onClose, isMobile }: NodeInspector
         {data.nodeType === 'conditional' && (
           <>
             <Section label="Label">
-              <input value={data.label} onChange={e => update({ label: e.target.value })} className={inputCls} placeholder="e.g. goal = weight_loss?" />
+              {isTranslating ? (
+                <>
+                  <p className="text-[9px] text-[var(--color-text-muted)] mb-1 italic">EN: {data.label}</p>
+                  <input value={getTranslation('title')} onChange={e => setTranslation('title', e.target.value)} className={inputCls} placeholder={`Translation (${lang.toUpperCase()})...`} />
+                </>
+              ) : (
+                <input value={data.label} onChange={e => update({ label: e.target.value })} className={inputCls} placeholder="e.g. goal = weight_loss?" />
+              )}
             </Section>
           </>
         )}

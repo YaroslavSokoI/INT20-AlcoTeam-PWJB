@@ -7,6 +7,18 @@ export interface NodeOption {
   icon?: string;
 }
 
+export interface NodeTranslations {
+  [lang: string]: {
+    title?: string;
+    description?: string;
+    options?: { value: string; label: string }[];
+    cta_text?: string;
+    digital_plan?: string;
+    physical_kit?: string;
+    why_text?: string;
+  };
+}
+
 export interface DbNode {
   id: string;
   type: NodeType;
@@ -21,6 +33,7 @@ export interface DbNode {
   why_text?: string;
   offer_conditions?: unknown;
   offer_priority?: number;
+  translations?: NodeTranslations;
   pos_x: number;
   pos_y: number;
   is_start: boolean;
@@ -70,6 +83,7 @@ export interface CreateNodeBody {
   why_text?: string;
   offer_conditions?: Condition | null;
   offer_priority?: number;
+  translations?: NodeTranslations;
   pos_x?: number;
   pos_y?: number;
   is_start?: boolean;
