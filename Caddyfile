@@ -9,7 +9,10 @@
         reverse_proxy admin-frontend:80
     }
     handle /api/* {
-        reverse_proxy app-backend:3002
+        reverse_proxy app-backend:3002 {
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Real-IP {remote_host}
+        }
     }
     @apidocs path /api-docs /api-docs/*
     handle @apidocs {

@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import {
   Users, TrendingUp, Target, AlertTriangle, ArrowUpRight, ArrowDownRight,
-  Calendar, CheckCircle, ChevronDown, Download, FileJson, FileSpreadsheet, Upload
+  Calendar, CheckCircle, ChevronDown, Download, FileJson, FileSpreadsheet, Upload, Timer
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useIsMobile } from '@/hooks/useResponsive';
@@ -32,7 +32,7 @@ const GOAL_LABELS: Record<string, string> = {
 };
 
 const PIE_COLORS = ['#4f8ef7', '#2cb67d', '#f5924a', '#9b59b6', '#ef4444', '#f59e0b', '#06b6d4'];
-const SOURCE_COLORS = ['#e1306c', '#1877f2', '#010101', '#0088cc', '#25d366', '#ff4500', '#6c5ce7'];
+const SOURCE_COLORS = ['#e1306c', '#69c9d0', '#1877f2', '#f77737', '#25d366', '#ff4500', '#6c5ce7'];
 const LANG_COLORS = ['#00b894', '#fdcb6e', '#e17055', '#0984e3', '#6c5ce7', '#d63031', '#00cec9', '#e84393', '#2d3436', '#a29bfe'];
 
 const tooltipStyle: React.CSSProperties = {
@@ -52,6 +52,15 @@ function NoData() {
   );
 }
 
+function AnimatedDot({ cx, cy, index }: any) {
+  return (
+    <circle
+      cx={cx} cy={cy} r={5} fill="#4f8ef7"
+      style={{ animation: `dotFadeIn 0.4s ease-out ${0.05 + index * 0.06}s both` }}
+    />
+  );
+}
+
 function renderPieLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) {
   const RADIAN = Math.PI / 180;
   const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
@@ -59,7 +68,11 @@ function renderPieLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }:
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
   if (percent < 0.05) return null;
   return (
-    <text x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={800}>
+    <text
+      x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central"
+      fontSize={11} fontWeight={800}
+      style={{ animation: 'pieLabel 0.4s ease-out 2s both' }}
+    >
       {`${Math.round(percent * 100)}%`}
     </text>
   );
@@ -183,7 +196,7 @@ export function AnalyticsPage() {
   }, [dateRange]);
 
   const handleImport = (data: Partial<AnalyticsStats>) => {
-    const full = { totalSessions: 0, completedSessions: 0, completionRate: 0, topGoals: [], weeklyTrend: [], dropoffs: [], devices: [], sources: [], languages: [], ...data } as AnalyticsStats;
+    const full = { totalSessions: 0, completedSessions: 0, completionRate: 0, avgCompletionMin: null, topGoals: [], weeklyTrend: [], dropoffs: [], devices: [], sources: [], languages: [], ageRange: [], ...data } as AnalyticsStats;
     setImportedStats(full);
     localStorage.setItem('analytics_imported', JSON.stringify(full));
   };
@@ -195,10 +208,13 @@ export function AnalyticsPage() {
 
   const topDropoff = stats?.dropoffs?.[0];
 
+  const avgTimeLabel = stats?.avgCompletionMin != null ? `${stats.avgCompletionMin} min` : '—';
+
   const kpis = stats ? [
     { label: 'Completion Rate', value: `${stats.completionRate}%`, change: '', icon: <Target />, color: '#4f8ef7' },
     { label: 'Total Users', value: stats.totalSessions.toLocaleString(), change: '', icon: <Users />, color: '#2cb67d' },
     { label: 'Completed', value: stats.completedSessions.toLocaleString(), change: '', icon: <TrendingUp />, color: '#f5924a' },
+    { label: 'Avg. Completion', value: avgTimeLabel, change: '', icon: <Timer />, color: '#8b5cf6' },
     { label: 'Drop-off Peak', value: topDropoff ? (topDropoff.attributeKey ? topDropoff.attributeKey.charAt(0).toUpperCase() + topDropoff.attributeKey.slice(1) : `Step ${topDropoff.step}`) : '—', change: '', icon: <AlertTriangle />, color: '#ef4444', onClick: topDropoff ? () => setShowDropoffs(true) : undefined },
   ] : [];
 
@@ -213,7 +229,7 @@ export function AnalyticsPage() {
   return (
     <div className="h-full overflow-y-auto bg-[var(--color-bg)] p-4 md:p-6 pb-24 md:pb-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
           <h1 className="text-2xl font-black text-[var(--color-text-primary)]">Analytics</h1>
           <p className="text-sm font-bold text-[var(--color-text-muted)] mt-0.5">Real-time performance metrics</p>
@@ -268,16 +284,9 @@ export function AnalyticsPage() {
           className="space-y-6"
         >
           {/* KPI row */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-            {kpis.map((kpi, i) => (
-              <motion.div
-                key={kpi.label}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.05 }}
-              >
-                <KpiCard {...kpi} isMobile={isMobile} />
-              </motion.div>
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+            {kpis.map((kpi) => (
+              <KpiCard key={kpi.label} {...kpi} isMobile={isMobile} />
             ))}
           </div>
 
@@ -291,36 +300,47 @@ export function AnalyticsPage() {
                     <XAxis dataKey="week" tick={{ fontSize: 10, fill: 'var(--color-text-muted)', fontWeight: 700 }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 10, fill: 'var(--color-text-muted)', fontWeight: 700 }} axisLine={false} tickLine={false} domain={[0, 100]} />
                     <Tooltip contentStyle={tooltipStyle} itemStyle={{ color: '#000' }} />
-                    <Line type="monotone" dataKey="rate" stroke="#4f8ef7" strokeWidth={4} dot={{ r: 5, fill: '#4f8ef7', strokeWidth: 0 }} activeDot={{ r: 7, strokeWidth: 4, stroke: 'white' }} />
+                    <Line type="monotone" dataKey="rate" stroke="#4f8ef7" strokeWidth={4} dot={<AnimatedDot />} activeDot={{ r: 7, strokeWidth: 4, stroke: 'white' }} />
                   </LineChart>
                 </ResponsiveContainer>
               ) : <NoData />}
             </ChartCard>
 
             <ChartCard title="User Motivation" subtitle="Top selected goal" className="lg:col-span-4">
-              {topGoals.length > 0 ? (
-                <ResponsiveContainer width="100%" height={isMobile ? 220 : 280}>
-                  <BarChart data={topGoals} layout="vertical" margin={{ top: 5, right: 20, bottom: 0, left: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false} opacity={0.5} />
-                    <XAxis type="number" hide />
-                    <YAxis dataKey="label" type="category" tick={{ fontSize: 10, fill: 'var(--color-text-primary)', fontWeight: 700 }} width={85} axisLine={false} tickLine={false} />
-                    <Tooltip cursor={{ fill: 'rgba(0,0,0,0.03)' }} contentStyle={tooltipStyle} />
-                    <Bar dataKey="count" radius={[0, 8, 8, 0]} maxBarSize={28}>
-                      {topGoals.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} opacity={0.8} />)}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : <NoData />}
+              {topGoals.length > 0 ? (() => {
+                const maxCount = Math.max(...topGoals.map(g => g.count));
+                const totalCount = topGoals.reduce((s, g) => s + g.count, 0);
+                return (
+                  <div className="flex flex-col justify-between" style={{ height: isMobile ? 220 : 280 }}>
+                    {topGoals.map((g, i) => (
+                      <div key={g.label}>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-sm font-bold text-[var(--color-text-primary)]">{g.label}</span>
+                          <span className="text-xs font-black tabular-nums" style={{ color: g.color }}>
+                            {g.count} . {Math.round((g.count / totalCount) * 100)}%
+                          </span>
+                        </div>
+                        <div className="h-2 rounded-full overflow-hidden" style={{ background: g.color + '20' }}>
+                          <div
+                            className="h-full rounded-full"
+                            style={{ width: `${(g.count / maxCount) * 100}%`, background: g.color, transformOrigin: 'left center', animation: `barGrow 0.6s ease-out ${i * 0.1}s both` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })() : <NoData />}
             </ChartCard>
           </div>
 
-          {/* Row 2: Devices + Source + Languages */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Row 2: Devices + Source + Languages + Age Range */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <ChartCard title="Devices" subtitle="User device types">
               {stats?.devices && stats.devices.length > 0 ? (
-                <ResponsiveContainer width="100%" height={220}>
-                  <PieChart>
-                    <Pie data={stats.devices} dataKey="count" nameKey="label" cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={4} cornerRadius={6} strokeWidth={0} label={renderPieLabel} labelLine={false}>
+                <ResponsiveContainer width="100%" height={190}>
+                  <PieChart style={{ outline: 'none' }}>
+                    <Pie data={stats.devices} dataKey="count" nameKey="label" cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={4} cornerRadius={10} strokeWidth={0} label={renderPieLabel} labelLine={false}>
                       {stats.devices.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                     </Pie>
                     <Tooltip contentStyle={tooltipStyle} formatter={(value: number, _: any, entry: any) => { const total = stats!.devices.reduce((s, d) => s + d.count, 0); return [`${value} (${Math.round((value / total) * 100)}%)`, 'Users']; }} />
@@ -332,9 +352,9 @@ export function AnalyticsPage() {
 
             <ChartCard title="Traffic Source" subtitle="In-app browser origin">
               {stats?.sources && stats.sources.length > 0 ? (
-                <ResponsiveContainer width="100%" height={220}>
-                  <PieChart>
-                    <Pie data={stats.sources} dataKey="count" nameKey="label" cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={4} cornerRadius={6} strokeWidth={0} label={renderPieLabel} labelLine={false}>
+                <ResponsiveContainer width="100%" height={190}>
+                  <PieChart style={{ outline: 'none' }}>
+                    <Pie data={stats.sources} dataKey="count" nameKey="label" cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={4} cornerRadius={10} strokeWidth={0} label={renderPieLabel} labelLine={false}>
                       {stats.sources.map((_, i) => <Cell key={i} fill={SOURCE_COLORS[i % SOURCE_COLORS.length]} />)}
                     </Pie>
                     <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => { const total = stats!.sources.reduce((s, d) => s + d.count, 0); return [`${value} (${Math.round((value / total) * 100)}%)`, 'Users']; }} />
@@ -346,9 +366,9 @@ export function AnalyticsPage() {
 
             <ChartCard title="Languages" subtitle="User browser language">
               {stats?.languages && stats.languages.length > 0 ? (
-                <ResponsiveContainer width="100%" height={220}>
-                  <PieChart>
-                    <Pie data={stats.languages} dataKey="count" nameKey="label" cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={4} cornerRadius={6} strokeWidth={0} label={renderPieLabel} labelLine={false}>
+                <ResponsiveContainer width="100%" height={190}>
+                  <PieChart style={{ outline: 'none' }}>
+                    <Pie data={stats.languages} dataKey="count" nameKey="label" cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={4} cornerRadius={10} strokeWidth={0} label={renderPieLabel} labelLine={false}>
                       {stats.languages.map((_, i) => <Cell key={i} fill={LANG_COLORS[i % LANG_COLORS.length]} />)}
                     </Pie>
                     <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => { const total = stats!.languages.reduce((s, d) => s + d.count, 0); return [`${value} (${Math.round((value / total) * 100)}%)`, 'Users']; }} />
@@ -356,6 +376,26 @@ export function AnalyticsPage() {
                   </PieChart>
                 </ResponsiveContainer>
               ) : <NoData />}
+            </ChartCard>
+
+            <ChartCard title="Age Range" subtitle="User age distribution">
+              {stats?.ageRange && stats.ageRange.length > 0 ? (() => {
+                const AGE_C = ['#a29bfe', '#6c5ce7', '#0984e3', '#00b894'];
+                const AGE_L: Record<string, string> = { under_25: 'Under 25', '25_35': '25–35', '36_50': '36–50', over_50: '50+' };
+                const ageData = stats.ageRange.map(r => ({ ...r, label: AGE_L[r.label] || r.label }));
+                const ageTotal = stats.ageRange.reduce((s, d) => s + d.count, 0);
+                return (
+                  <ResponsiveContainer width="100%" height={190}>
+                    <PieChart style={{ outline: 'none' }}>
+                      <Pie data={ageData} dataKey="count" nameKey="label" cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={4} cornerRadius={10} strokeWidth={0} label={renderPieLabel} labelLine={false}>
+                        {ageData.map((_, i) => <Cell key={i} fill={AGE_C[i % AGE_C.length]} />)}
+                      </Pie>
+                      <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => [`${value} (${Math.round((value / ageTotal) * 100)}%)`, 'Users']} />
+                      <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, fontWeight: 700 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                );
+              })() : <NoData />}
             </ChartCard>
           </div>
 
@@ -375,13 +415,13 @@ export function AnalyticsPage() {
                     <YAxis
                       dataKey="attributeKey"
                       type="category"
-                      tick={{ fontSize: 11, fill: 'var(--color-text-primary)', fontWeight: 700 }}
+                      tick={{ fontSize: 13, fill: 'var(--color-text-primary)', fontWeight: 700 }}
                       width={100}
                       axisLine={false}
                       tickLine={false}
-                      tickFormatter={(val: string) => val || 'info'}
+                      tickFormatter={(val: string) => val ? val.charAt(0).toUpperCase() + val.slice(1).replace(/_/g, ' ') : 'Info'}
                     />
-                    <Tooltip cursor={{ fill: 'rgba(0,0,0,0.03)' }} contentStyle={tooltipStyle} formatter={(value: number, _: any, entry: any) => [`${value}% (${entry.payload.count} users)`, 'Drop-off']} labelFormatter={(l: string) => l || 'info node'} />
+                    <Tooltip cursor={{ fill: 'rgba(0,0,0,0.03)' }} contentStyle={tooltipStyle} formatter={(value: number, _: any, entry: any) => [`${value}% (${entry.payload.count} users)`, 'Drop-off']} labelFormatter={(l: string) => l ? l.charAt(0).toUpperCase() + l.slice(1).replace(/_/g, ' ') : 'Info node'} />
                     <Bar dataKey="percent" radius={[0, 8, 8, 0]} maxBarSize={36} fill="#ef4444" opacity={0.75} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -403,18 +443,18 @@ export function AnalyticsPage() {
               onClick={() => setShowDropoffs(false)}
             />
             <motion.div
-              className="fixed inset-x-4 top-[15%] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[420px] bg-white rounded-3xl border border-[var(--color-border)] shadow-2xl z-[201] p-6 max-h-[70vh] overflow-y-auto"
+              className="fixed inset-x-4 top-[15%] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[420px] bg-white rounded-3xl border border-[var(--color-border)] shadow-2xl z-[201] p-6 max-h-[70vh] flex flex-col"
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
             >
-              <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center justify-between mb-5 shrink-0">
                 <h3 className="text-lg font-black text-[var(--color-text-primary)]">Drop-off Details</h3>
                 <button onClick={() => setShowDropoffs(false)} className="p-1.5 rounded-xl hover:bg-[var(--color-bg)] transition-colors">
                   <X className="w-5 h-5 text-[var(--color-text-muted)]" />
                 </button>
               </div>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 overflow-y-auto">
                 {stats.dropoffs.map((d, i) => (
                   <div key={i} className="flex items-center gap-3 p-3 rounded-2xl bg-[var(--color-bg)] border border-[var(--color-border)]">
                     <div className="w-9 h-9 rounded-xl bg-red-50 text-red-500 flex items-center justify-center text-sm font-black shrink-0">
@@ -494,33 +534,33 @@ function KpiCard({ label, value, change, icon, color, onClick }: any) {
   return (
     <div
       className={cn(
-        "bg-[var(--color-surface)] rounded-[24px] border border-[var(--color-border)] p-4 md:p-6 shadow-[var(--shadow-card)] active:scale-[0.98] transition-all group overflow-hidden relative",
+        "bg-[var(--color-surface)] rounded-[24px] border border-[var(--color-border)] p-3 md:p-4 shadow-[var(--shadow-card)] group overflow-hidden relative",
         onClick && "cursor-pointer hover:border-black/20"
       )}
       onClick={onClick}
     >
-      <div className="flex items-start justify-between relative z-10">
-        <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm" style={{ backgroundColor: color + '12', color }}>
+      <div className="flex items-center gap-3 relative z-10">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm" style={{ backgroundColor: color + '12', color }}>
           {icon}
         </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-xl font-black text-[var(--color-text-primary)] leading-tight tracking-tighter wrap-break-word">{value}</p>
+          <p className="text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{label}</p>
+        </div>
         {onClick ? (
-          <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 text-[var(--color-text-muted)] border border-[var(--color-border)]">
+          <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 text-[var(--color-text-muted)] border border-[var(--color-border)] shrink-0">
             <span className="text-[10px] font-black">Details</span>
             <ArrowUpRight className="w-3 h-3" />
           </div>
         ) : change ? (
           <div className={cn(
-            "flex items-center gap-0.5 px-2 py-1 rounded-full border",
+            "flex items-center gap-0.5 px-2 py-1 rounded-full border shrink-0",
             isPositive ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-red-50 text-red-500 border-red-100"
           )}>
             {isPositive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
             <span className="text-[10px] font-black">{change}</span>
           </div>
         ) : null}
-      </div>
-      <div className="mt-5 relative z-10">
-        <p className="text-2xl font-black text-[var(--color-text-primary)] leading-tight mb-1.5 tracking-tighter wrap-break-word">{value}</p>
-        <p className="text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest">{label}</p>
       </div>
       <div
         className="absolute -right-4 -bottom-4 w-24 h-24 rounded-full blur-3xl opacity-10 transition-opacity group-hover:opacity-20 pointer-events-none"
@@ -532,9 +572,9 @@ function KpiCard({ label, value, change, icon, color, onClick }: any) {
 
 function ChartCard({ title, subtitle, children, className }: any) {
   return (
-    <div className={cn("bg-[var(--color-surface)] rounded-[32px] border border-[var(--color-border)] p-5 md:p-8 shadow-[var(--shadow-card)]", className)}>
-      <div className="mb-8">
-        <h3 className="text-lg font-black text-[var(--color-text-primary)] tracking-tight">{title}</h3>
+    <div className={cn("bg-[var(--color-surface)] rounded-[24px] border border-[var(--color-border)] p-4 md:p-5 shadow-[var(--shadow-card)]", className)}>
+      <div className="mb-4">
+        <h3 className="text-base font-black text-[var(--color-text-primary)] tracking-tight">{title}</h3>
         <p className="text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mt-0.5">{subtitle}</p>
       </div>
       {children}

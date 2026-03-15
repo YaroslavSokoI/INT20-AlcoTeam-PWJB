@@ -16,11 +16,13 @@ router.get('/stats', async (req: Request, res: Response) => {
     else if (range === '90D') dateFilter = "AND created_at >= NOW() - INTERVAL '90 days'";
     // 'ALL' = no filter
 
-    // Total sessions & completion rate
+    // Total sessions, completion rate & avg completion time
     const { rows: [totals] } = await pool.query(`
       SELECT
         COUNT(*)::int AS total_sessions,
-        COUNT(*) FILTER (WHERE completed = TRUE)::int AS completed_sessions
+        COUNT(*) FILTER (WHERE completed = TRUE)::int AS completed_sessions,
+        ROUND(AVG(EXTRACT(EPOCH FROM (completed_at - created_at)) / 60.0)
+          FILTER (WHERE completed = TRUE AND completed_at IS NOT NULL))::int AS avg_completion_min
       FROM sessions
       WHERE 1=1 ${dateFilter}
     `);
@@ -91,10 +93,21 @@ router.get('/stats', async (req: Request, res: Response) => {
       LIMIT 10
     `);
 
+    // Age range distribution (from answers)
+    const { rows: ageRange } = await pool.query<{ label: string; count: number }>(`
+      SELECT value::text AS label, COUNT(*)::int AS count
+      FROM answers
+      WHERE attribute_key = 'age'
+        ${dateFilter.replace(/created_at/g, 'answers.created_at')}
+      GROUP BY value
+      ORDER BY count DESC
+    `);
+
     res.json({
       totalSessions: totals.total_sessions,
       completedSessions: totals.completed_sessions,
       completionRate,
+      avgCompletionMin: totals.avg_completion_min ?? null,
       topGoals: topGoals.map(r => ({
         label: r.label.replace(/"/g, ''),
         count: r.count,
@@ -113,6 +126,7 @@ router.get('/stats', async (req: Request, res: Response) => {
       devices: devices.map(r => ({ label: r.label, count: r.count })),
       sources: sources.map(r => ({ label: r.label, count: r.count })),
       languages: languages.map(r => ({ label: r.label, count: r.count })),
+      ageRange: ageRange.map(r => ({ label: r.label.replace(/"/g, ''), count: r.count })),
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch analytics', detail: String(err) });

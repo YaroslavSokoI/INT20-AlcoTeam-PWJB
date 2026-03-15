@@ -290,4 +290,6 @@ export interface AnalyticsStats {
     devices: ChartItem[];
     sources: ChartItem[];
     languages: ChartItem[];
+    ageRange: ChartItem[];
+    avgCompletionMin: number | null;
 }
