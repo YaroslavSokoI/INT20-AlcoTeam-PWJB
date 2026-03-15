@@ -1,3 +1,8 @@
+#Live Demo
+survey: https://alco-team.ddns.net/
+admin panel: https://alco-team.ddns.net/admin
+Creds: login "admin" password "admin"
+
 # BetterMe Wellness Platform
 
 Повноцінна wellness-платформа з адмін-панеллю для побудови персоналізованих wellness-потоків та користувацьким додатком, який проводить користувача через квіз і рекомендує індивідуальні пропозиції.
