@@ -76,9 +76,23 @@ export const SEED_NODES: FlowNode[] = [
     },
   },
   {
+    id: 'q6',
+    type: 'question',
+    position: { x: 780, y: 120 },
+    data: {
+      label: 'What would you like us to call you?',
+      nodeType: 'question',
+      questionText: 'What would you like us to call you?',
+      answerType: 'input',
+      attributeKey: 'name',
+      options: [],
+      transitions: [{ id: 't9', answerValue: '', targetNodeId: 'i1' }],
+    },
+  },
+  {
     id: 'i1',
     type: 'info',
-    position: { x: 780, y: 120 },
+    position: { x: 1100, y: 120 },
     data: {
       label: 'Your 4-week progress',
       nodeType: 'info',
@@ -107,7 +121,7 @@ export const SEED_NODES: FlowNode[] = [
   {
     id: 'o1',
     type: 'offer',
-    position: { x: 1100, y: 120 },
+    position: { x: 1460, y: 120 },
     data: {
       label: 'Weight Loss Starter',
       nodeType: 'offer',
@@ -119,7 +133,7 @@ export const SEED_NODES: FlowNode[] = [
   {
     id: 'o2',
     type: 'offer',
-    position: { x: 1100, y: 340 },
+    position: { x: 1460, y: 340 },
     data: {
       label: 'Lean Strength Builder',
       nodeType: 'offer',
@@ -134,8 +148,10 @@ export const SEED_EDGES: FlowEdge[] = [
   { id: 'e1', source: 'q1', target: 'q2', sourceHandle: 'build_strength', data: { label: 'Build strength' } },
   { id: 'e2', source: 'q1', target: 'q3', sourceHandle: 'lose_weight',    data: { label: 'Lose weight' } },
   { id: 'e3', source: 'q1', target: 'q5', sourceHandle: 'flexibility',    data: { label: 'Flexibility' } },
-  { id: 'e4', source: 'q2', target: 'i1', data: { label: '' } },
+  { id: 'e4', source: 'q2', target: 'q6', data: { label: '' } },
   { id: 'e5', source: 'q3', target: 'q4', data: { label: '' } },
-  { id: 'e6', source: 'q4', target: 'i1', data: { label: '' } },
+  { id: 'e6', source: 'q4', target: 'q6', data: { label: '' } },
+  { id: 'e8', source: 'q5', target: 'q6', data: { label: '' } },
+  { id: 'e9', source: 'q6', target: 'i1', data: { label: '' } },
   { id: 'e7', source: 'i1', target: 'o1', data: { label: '' } },
 ];

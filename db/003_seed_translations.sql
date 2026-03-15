@@ -246,6 +246,13 @@ UPDATE question_nodes SET translations = '{
   }
 }' WHERE node_id = '00000000-0000-0000-0000-000000000024';
 
+-- Q12: Name (text input)
+UPDATE question_nodes SET translations = '{
+  "ua": {
+    "title": "Як вас звати?"
+  }
+}' WHERE node_id = '00000000-0000-0000-0000-000000000025';
+
 -- ---- INFO NODES ----
 
 UPDATE info_nodes SET translations = '{

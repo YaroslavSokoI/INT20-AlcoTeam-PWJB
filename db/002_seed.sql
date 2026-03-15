@@ -411,12 +411,24 @@ VALUES (
   'motivation'
 );
 
+-- Q12: Name (text input, no routing impact)
+INSERT INTO nodes (id, type, pos_x, pos_y)
+VALUES ('00000000-0000-0000-0000-000000000025','question',0,2700);
+INSERT INTO question_nodes (node_id, title, question_type, options, attribute_key)
+VALUES (
+  '00000000-0000-0000-0000-000000000025',
+  'What would you like us to call you?',
+  'text_input',
+  NULL,
+  'name'
+);
+
 -- ============================================================
 -- INFO: Plan ready (transition to offers)
 -- ============================================================
 
 INSERT INTO nodes (id, type, pos_x, pos_y)
-VALUES ('00000000-0000-0000-0000-000000000035','info',0,2700);
+VALUES ('00000000-0000-0000-0000-000000000035','info',0,2900);
 INSERT INTO info_nodes (node_id, title, content)
 VALUES (
   '00000000-0000-0000-0000-000000000035',
@@ -680,7 +692,9 @@ VALUES ('00000000-0000-0000-0000-000000000022','00000000-0000-0000-0000-00000000
 INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
 VALUES ('00000000-0000-0000-0000-000000000023','00000000-0000-0000-0000-000000000024',NULL,NULL,0);
 INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
-VALUES ('00000000-0000-0000-0000-000000000024','00000000-0000-0000-0000-000000000035',NULL,NULL,0);
+VALUES ('00000000-0000-0000-0000-000000000024','00000000-0000-0000-0000-000000000025',NULL,NULL,0);
+INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)
+VALUES ('00000000-0000-0000-0000-000000000025','00000000-0000-0000-0000-000000000035',NULL,NULL,0);
 
 -- ---- INFO(35) → COND(41) decision tree ----
 INSERT INTO edges (source_node_id, target_node_id, label, conditions, priority)

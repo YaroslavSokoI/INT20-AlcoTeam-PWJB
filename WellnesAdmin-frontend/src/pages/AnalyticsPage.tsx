@@ -31,10 +31,10 @@ const ISO_NUMERIC: Record<number, string> = {
 };
 
 const GOAL_COLORS: Record<string, string> = {
-  weight_loss: '#4f8ef7',
-  strength: '#2cb67d',
-  stress_relief: '#f5924a',
-  flexibility: '#9b59b6',
+  weight_loss: '#ff6000',
+  strength: '#10b981',
+  stress_relief: '#7c3aed',
+  flexibility: '#3b82f6',
   endurance: '#ef4444',
 };
 
@@ -46,9 +46,9 @@ const GOAL_LABELS: Record<string, string> = {
   endurance: 'Endurance',
 };
 
-const PIE_COLORS = ['#4f8ef7', '#2cb67d', '#f5924a', '#9b59b6', '#ef4444', '#f59e0b', '#06b6d4'];
-const SOURCE_COLORS = ['#e1306c', '#69c9d0', '#1877f2', '#f77737', '#25d366', '#ff4500', '#6c5ce7'];
-const LANG_COLORS = ['#00b894', '#fdcb6e', '#e17055', '#0984e3', '#6c5ce7', '#d63031', '#00cec9', '#e84393', '#2d3436', '#a29bfe'];
+const PIE_COLORS = ['#ff6000', '#7c3aed', '#10b981', '#3b82f6', '#ef4444', '#ffb600', '#ec4899'];
+const SOURCE_COLORS = ['#ff6000', '#7c3aed', '#3b82f6', '#10b981', '#ffb600', '#ef4444', '#ec4899'];
+const LANG_COLORS = ['#ff6000', '#7c3aed', '#10b981', '#3b82f6', '#ffb600', '#ef4444', '#ec4899', '#06b6d4', '#84cc16', '#f59e0b'];
 
 const tooltipStyle: React.CSSProperties = {
   background: '#fff',
@@ -70,7 +70,7 @@ function NoData() {
 function AnimatedDot({ cx, cy, index }: any) {
   return (
     <circle
-      cx={cx} cy={cy} r={5} fill="#4f8ef7"
+      cx={cx} cy={cy} r={5} fill="#ff7900"
       style={{ animation: `dotFadeIn 0.4s ease-out ${0.05 + index * 0.06}s both` }}
     />
   );
@@ -164,9 +164,9 @@ function WorldMap({ countries }: { countries: { label: string; count: number }[]
   function getColor(count: number) {
     if (!count) return '#e5e7eb';
     const t = Math.pow(count / maxCount, 0.35);
-    const r = Math.round(191 + (30 - 191) * t);
-    const g = Math.round(219 + (58 - 219) * t);
-    const b = Math.round(254 + (138 - 254) * t);
+    const r = 255;
+    const g = Math.round(240 + (72 - 240) * t);
+    const b = Math.round(200 + (0 - 200) * t);
     return `rgb(${r},${g},${b})`;
   }
 
@@ -182,12 +182,6 @@ function WorldMap({ countries }: { countries: { label: string; count: number }[]
           onClick={() => setZoom(z => Math.max(z / 1.5, 1))}
           className="w-7 h-7 rounded-lg bg-white border border-[var(--color-border)] shadow-sm flex items-center justify-center text-sm font-black text-[var(--color-text-primary)] hover:bg-[var(--color-bg)] active:scale-95 transition-all"
         >−</button>
-        {zoom > 1 && (
-          <button
-            onClick={() => { setZoom(1); setCenter([15, 10]); }}
-            className="w-7 h-7 rounded-lg bg-white border border-[var(--color-border)] shadow-sm flex items-center justify-center text-[9px] font-black text-[var(--color-text-muted)] hover:bg-[var(--color-bg)] active:scale-95 transition-all"
-          >↺</button>
-        )}
       </div>
 
       <ComposableMap projectionConfig={{ scale: 240, center: [15, 10] }} style={{ width: '100%', height: '100%', display: 'block' }}>
@@ -356,7 +350,7 @@ export function AnalyticsPage() {
                     <XAxis dataKey="week" tick={{ fontSize: 10, fill: 'var(--color-text-muted)', fontWeight: 700 }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 10, fill: 'var(--color-text-muted)', fontWeight: 700 }} axisLine={false} tickLine={false} domain={[0, 100]} />
                     <Tooltip contentStyle={tooltipStyle} itemStyle={{ color: '#000' }} />
-                    <Line type="monotone" dataKey="rate" stroke="#4f8ef7" strokeWidth={4} dot={<AnimatedDot />} activeDot={{ r: 7, strokeWidth: 4, stroke: 'white' }} />
+                    <Line type="monotone" dataKey="rate" stroke="#ff7900" strokeWidth={4} dot={<AnimatedDot />} activeDot={{ r: 7, strokeWidth: 4, stroke: 'white' }} />
                   </LineChart>
                 </ResponsiveContainer>
               ) : <NoData />}
@@ -364,7 +358,7 @@ export function AnalyticsPage() {
 
             <ChartCard title="Drop-off" subtitle="Steps where users abandon" className="lg:col-span-4">
               {stats?.dropoffs && stats.dropoffs.length > 0 ? (() => {
-                const DROPOFF_COLORS = ['#ef4444','#f97316','#f59e0b','#84cc16','#22c55e','#06b6d4'];
+                const DROPOFF_COLORS = ['#ef4444','#ff6000','#ffb600','#10b981','#3b82f6','#7c3aed'];
                 const items = stats.dropoffs.map((d, i) => ({
                   name: d.title,
                   count: d.count,
@@ -442,7 +436,7 @@ export function AnalyticsPage() {
 
             <ChartCard title="Age Range" subtitle="User age distribution">
               {stats?.ageRange && stats.ageRange.length > 0 ? (() => {
-                const AGE_C = ['#a29bfe', '#6c5ce7', '#0984e3', '#00b894'];
+                const AGE_C = ['#ff6000', '#7c3aed', '#10b981', '#ffb600'];
                 const AGE_L: Record<string, string> = { under_25: 'Under 25', '25_35': '25–35', '36_50': '36–50', over_50: '50+' };
                 const ageData = stats.ageRange.map(r => ({ ...r, label: AGE_L[r.label] || r.label }));
                 const ageTotal = stats.ageRange.reduce((s, d) => s + d.count, 0);
