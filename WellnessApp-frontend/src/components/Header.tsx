@@ -12,10 +12,9 @@ interface HeaderProps {
 const LANGUAGES = [
   { code: 'en', label: 'English' },
   { code: 'ua', label: 'Українська' },
-  { code: 'ru', label: 'Русский' }
 ] as const;
 
-const i18nToBackend: Record<string, string> = { en: 'en', ua: 'uk', ru: 'ru' };
+const i18nToBackend: Record<string, string> = { en: 'en', ua: 'uk' };
 
 export function Header({ onBack, canGoBack }: HeaderProps) {
   const { t, i18n } = useTranslation();
