@@ -22,11 +22,11 @@ VALUES (
   'What is your main wellness goal?',
   'single_choice',
   '[
-    {"value":"weight_loss",   "label":"Lose Weight",     "icon":"scale"},
-    {"value":"strength",      "label":"Build Strength",  "icon":"dumbbell"},
-    {"value":"flexibility",   "label":"Get Flexible",    "icon":"stretch"},
-    {"value":"stress_relief", "label":"Reduce Stress",   "icon":"leaf"},
-    {"value":"endurance",     "label":"Boost Endurance", "icon":"runner"}
+    {"value":"weight_loss",   "label":"Lose Weight",     "icon":"Scale"},
+    {"value":"strength",      "label":"Build Strength",  "icon":"Dumbbell"},
+    {"value":"flexibility",   "label":"Get Flexible",    "icon":"PersonStanding"},
+    {"value":"stress_relief", "label":"Reduce Stress",   "icon":"Leaf"},
+    {"value":"endurance",     "label":"Boost Endurance", "icon":"Footprints"}
   ]',
   'goal'
 );
@@ -40,10 +40,10 @@ VALUES (
   'What is your age range?',
   'single_choice',
   '[
-    {"value":"under_25", "label":"Under 25", "icon":"sprout"},
-    {"value":"25_35",    "label":"25 to 35",    "icon":"zap"},
-    {"value":"36_50",    "label":"36 to 50",    "icon":"target"},
-    {"value":"over_50",  "label":"50+",      "icon":"star"}
+    {"value":"under_25", "label":"Under 25", "icon":"Sprout"},
+    {"value":"25_35",    "label":"25 to 35",    "icon":"Zap"},
+    {"value":"36_50",    "label":"36 to 50",    "icon":"Target"},
+    {"value":"over_50",  "label":"50+",      "icon":"Star"}
   ]',
   'age'
 );
@@ -57,10 +57,10 @@ VALUES (
   'What is your gender?',
   'single_choice',
   '[
-    {"value":"male",              "label":"Male",              "icon":"user"},
-    {"value":"female",            "label":"Female",            "icon":"user"},
-    {"value":"non_binary",        "label":"Non-binary",        "icon":"users"},
-    {"value":"prefer_not_to_say", "label":"Prefer not to say", "icon":"lock"}
+    {"value":"male",              "label":"Male",              "icon":"User"},
+    {"value":"female",            "label":"Female",            "icon":"User"},
+    {"value":"non_binary",        "label":"Non-binary",        "icon":"Users"},
+    {"value":"prefer_not_to_say", "label":"Prefer not to say", "icon":"Lock"}
   ]',
   'gender'
 );
@@ -74,9 +74,9 @@ VALUES (
   'How would you describe your current fitness level?',
   'single_choice',
   '[
-    {"value":"beginner",     "label":"Beginner, just starting out",       "icon":"sprout"},
-    {"value":"intermediate", "label":"Intermediate, work out sometimes", "icon":"zap"},
-    {"value":"advanced",     "label":"Advanced, train regularly",         "icon":"rocket"}
+    {"value":"beginner",     "label":"Beginner, just starting out",       "icon":"Sprout"},
+    {"value":"intermediate", "label":"Intermediate, work out sometimes", "icon":"Zap"},
+    {"value":"advanced",     "label":"Advanced, train regularly",         "icon":"Rocket"}
   ]',
   'level'
 );
@@ -159,9 +159,9 @@ VALUES (
   'Where do you prefer to work out?',
   'single_choice',
   '[
-    {"value":"home",    "label":"At Home",    "icon":"home"},
-    {"value":"gym",     "label":"At the Gym", "icon":"dumbbell"},
-    {"value":"outdoor", "label":"Outdoors",   "icon":"tree"}
+    {"value":"home",    "label":"At Home",    "icon":"Home"},
+    {"value":"gym",     "label":"At the Gym", "icon":"Dumbbell"},
+    {"value":"outdoor", "label":"Outdoors",   "icon":"TreePine"}
   ]',
   'context'
 );
@@ -175,9 +175,9 @@ VALUES (
   'How would you describe your current eating habits?',
   'single_choice',
   '[
-    {"value":"healthy", "label":"Mostly healthy and balanced",           "icon":"salad"},
-    {"value":"mixed",   "label":"Mixed, good days and bad days",        "icon":"utensils"},
-    {"value":"poor",    "label":"Mostly fast food and irregular meals", "icon":"pizza"}
+    {"value":"healthy", "label":"Mostly healthy and balanced",           "icon":"Salad"},
+    {"value":"mixed",   "label":"Mixed, good days and bad days",        "icon":"Utensils"},
+    {"value":"poor",    "label":"Mostly fast food and irregular meals", "icon":"Pizza"}
   ]',
   'diet'
 );
@@ -193,9 +193,9 @@ VALUES (
   'What equipment do you have access to?',
   'single_choice',
   '[
-    {"value":"full_gym",    "label":"Full gym with machines and free weights", "icon":"dumbbell"},
-    {"value":"home_basics", "label":"Home basics: dumbbells, bands, etc.",    "icon":"home"},
-    {"value":"none",        "label":"No equipment, bodyweight only",          "icon":"user"}
+    {"value":"full_gym",    "label":"Full gym with machines and free weights", "icon":"Dumbbell"},
+    {"value":"home_basics", "label":"Home basics: dumbbells, bands, etc.",    "icon":"Home"},
+    {"value":"none",        "label":"No equipment, bodyweight only",          "icon":"User"}
   ]',
   'equipment'
 );
@@ -209,10 +209,10 @@ VALUES (
   'Do you have any injuries or physical limitations?',
   'single_choice',
   '[
-    {"value":"none",     "label":"No injuries",          "icon":"check"},
-    {"value":"knee",     "label":"Knee issues",          "icon":"alert-circle"},
-    {"value":"back",     "label":"Back / spine issues",  "icon":"alert-circle"},
-    {"value":"shoulder", "label":"Shoulder issues",       "icon":"alert-circle"}
+    {"value":"none",     "label":"No injuries",          "icon":"Check"},
+    {"value":"knee",     "label":"Knee issues",          "icon":"AlertCircle"},
+    {"value":"back",     "label":"Back / spine issues",  "icon":"AlertCircle"},
+    {"value":"shoulder", "label":"Shoulder issues",       "icon":"AlertCircle"}
   ]',
   'injuries'
 );
@@ -228,9 +228,9 @@ VALUES (
   'What type of flexibility training interests you?',
   'single_choice',
   '[
-    {"value":"yoga",       "label":"Yoga flows",                 "icon":"stretch"},
-    {"value":"stretching", "label":"Deep stretching / mobility", "icon":"move"},
-    {"value":"pilates",    "label":"Pilates",                    "icon":"dumbbell"}
+    {"value":"yoga",       "label":"Yoga flows",                 "icon":"PersonStanding"},
+    {"value":"stretching", "label":"Deep stretching / mobility", "icon":"Move"},
+    {"value":"pilates",    "label":"Pilates",                    "icon":"Dumbbell"}
   ]',
   'flex_pref'
 );
@@ -244,10 +244,10 @@ VALUES (
   'Do you experience any chronic pain or stiffness?',
   'single_choice',
   '[
-    {"value":"none",   "label":"No pain, I just want more flexibility",  "icon":"check"},
-    {"value":"back",   "label":"Lower back pain",                       "icon":"alert-circle"},
-    {"value":"joints", "label":"Joint stiffness",                       "icon":"alert-circle"},
-    {"value":"neck",   "label":"Neck and shoulders",                    "icon":"alert-circle"}
+    {"value":"none",   "label":"No pain, I just want more flexibility",  "icon":"Check"},
+    {"value":"back",   "label":"Lower back pain",                       "icon":"AlertCircle"},
+    {"value":"joints", "label":"Joint stiffness",                       "icon":"AlertCircle"},
+    {"value":"neck",   "label":"Neck and shoulders",                    "icon":"AlertCircle"}
   ]',
   'pain'
 );
@@ -263,10 +263,10 @@ VALUES (
   'What is your main source of stress?',
   'single_choice',
   '[
-    {"value":"work",          "label":"Work and career pressure",  "icon":"briefcase"},
-    {"value":"relationships", "label":"Relationships and family",  "icon":"users"},
-    {"value":"health",        "label":"Health concerns",           "icon":"heart"},
-    {"value":"financial",     "label":"Financial worries",         "icon":"dollar-sign"}
+    {"value":"work",          "label":"Work and career pressure",  "icon":"Briefcase"},
+    {"value":"relationships", "label":"Relationships and family",  "icon":"Users"},
+    {"value":"health",        "label":"Health concerns",           "icon":"Heart"},
+    {"value":"financial",     "label":"Financial worries",         "icon":"DollarSign"}
   ]',
   'stress_source'
 );
@@ -280,10 +280,10 @@ VALUES (
   'What relaxation methods appeal to you?',
   'single_choice',
   '[
-    {"value":"meditation",  "label":"Meditation and breathwork",     "icon":"wind"},
-    {"value":"movement",    "label":"Gentle movement (yoga, walks)", "icon":"stretch"},
-    {"value":"journaling",  "label":"Journaling and reflection",     "icon":"book-open"},
-    {"value":"nothing_yet", "label":"Haven''t tried anything yet",   "icon":"help-circle"}
+    {"value":"meditation",  "label":"Meditation and breathwork",     "icon":"Wind"},
+    {"value":"movement",    "label":"Gentle movement (yoga, walks)", "icon":"PersonStanding"},
+    {"value":"journaling",  "label":"Journaling and reflection",     "icon":"BookOpen"},
+    {"value":"nothing_yet", "label":"Haven''t tried anything yet",   "icon":"HelpCircle"}
   ]',
   'relax_pref'
 );
@@ -299,10 +299,10 @@ VALUES (
   'What type of cardio do you enjoy most?',
   'single_choice',
   '[
-    {"value":"running",  "label":"Running / jogging", "icon":"runner"},
-    {"value":"cycling",  "label":"Cycling",           "icon":"bike"},
-    {"value":"swimming", "label":"Swimming",           "icon":"droplet"},
-    {"value":"mixed",    "label":"A mix of everything","icon":"shuffle"}
+    {"value":"running",  "label":"Running / jogging", "icon":"Footprints"},
+    {"value":"cycling",  "label":"Cycling",           "icon":"Bike"},
+    {"value":"swimming", "label":"Swimming",           "icon":"Droplet"},
+    {"value":"mixed",    "label":"A mix of everything","icon":"Shuffle"}
   ]',
   'cardio_type'
 );
@@ -316,10 +316,10 @@ VALUES (
   'How far can you comfortably run or cycle without stopping?',
   'single_choice',
   '[
-    {"value":"none",     "label":"I can''t run / cycle far at all", "icon":"pause"},
-    {"value":"low",      "label":"About 1 to 2 km / 10 min",         "icon":"zap"},
-    {"value":"moderate", "label":"3 to 5 km / 20 to 30 min",            "icon":"trending-up"},
-    {"value":"high",     "label":"5+ km / 30+ min easily",        "icon":"rocket"}
+    {"value":"none",     "label":"I can''t run / cycle far at all", "icon":"Pause"},
+    {"value":"low",      "label":"About 1 to 2 km / 10 min",         "icon":"Zap"},
+    {"value":"moderate", "label":"3 to 5 km / 20 to 30 min",            "icon":"TrendingUp"},
+    {"value":"high",     "label":"5+ km / 30+ min easily",        "icon":"Rocket"}
   ]',
   'cardio_level'
 );
@@ -337,9 +337,9 @@ VALUES (
   'How much time can you dedicate to training each day?',
   'single_choice',
   '[
-    {"value":"10_15",   "label":"10 to 15 minutes", "icon":"zap"},
-    {"value":"20_30",   "label":"20 to 30 minutes", "icon":"clock"},
-    {"value":"45_plus", "label":"45+ minutes",   "icon":"flame"}
+    {"value":"10_15",   "label":"10 to 15 minutes", "icon":"Zap"},
+    {"value":"20_30",   "label":"20 to 30 minutes", "icon":"Clock"},
+    {"value":"45_plus", "label":"45+ minutes",   "icon":"Flame"}
   ]',
   'time_available'
 );
@@ -353,11 +353,11 @@ VALUES (
   'What''s the biggest thing getting in the way of your wellness goals?',
   'single_choice',
   '[
-    {"value":"time_lack",      "label":"Not enough time",                          "icon":"clock"},
-    {"value":"low_motivation", "label":"Lack of motivation or discipline",         "icon":"frown"},
-    {"value":"stress_fatigue",  "label":"Stress and fatigue",                       "icon":"cloud"},
-    {"value":"no_guidance",     "label":"No guidance, don''t know where to start",  "icon":"help-circle"},
-    {"value":"nothing",         "label":"Nothing, I''m ready to go!",              "icon":"rocket"}
+    {"value":"time_lack",      "label":"Not enough time",                          "icon":"Clock"},
+    {"value":"low_motivation", "label":"Lack of motivation or discipline",         "icon":"Frown"},
+    {"value":"stress_fatigue",  "label":"Stress and fatigue",                       "icon":"Cloud"},
+    {"value":"no_guidance",     "label":"No guidance, don''t know where to start",  "icon":"HelpCircle"},
+    {"value":"nothing",         "label":"Nothing, I''m ready to go!",              "icon":"Rocket"}
   ]',
   'barrier'
 );
@@ -371,9 +371,9 @@ VALUES (
   'How would you rate your current stress level?',
   'single_choice',
   '[
-    {"value":"low",    "label":"Low, I feel calm and balanced",    "icon":"smile"},
-    {"value":"medium", "label":"Medium, some tension day-to-day",  "icon":"meh"},
-    {"value":"high",   "label":"High, I often feel overwhelmed",   "icon":"frown"}
+    {"value":"low",    "label":"Low, I feel calm and balanced",    "icon":"Smile"},
+    {"value":"medium", "label":"Medium, some tension day-to-day",  "icon":"Meh"},
+    {"value":"high",   "label":"High, I often feel overwhelmed",   "icon":"Frown"}
   ]',
   'stress_level'
 );
@@ -387,9 +387,9 @@ VALUES (
   'How is your sleep quality lately?',
   'single_choice',
   '[
-    {"value":"good", "label":"Good, 7 to 8h, wake up rested",       "icon":"moon"},
-    {"value":"fair", "label":"Fair, inconsistent, could be better",  "icon":"cloud-moon"},
-    {"value":"poor", "label":"Poor, I often wake up tired",          "icon":"cloud"}
+    {"value":"good", "label":"Good, 7 to 8h, wake up rested",       "icon":"Moon"},
+    {"value":"fair", "label":"Fair, inconsistent, could be better",  "icon":"CloudMoon"},
+    {"value":"poor", "label":"Poor, I often wake up tired",          "icon":"Cloud"}
   ]',
   'sleep_quality'
 );
@@ -401,12 +401,12 @@ INSERT INTO question_nodes (node_id, title, question_type, options, attribute_ke
 VALUES (
   '00000000-0000-0000-0000-000000000024',
   'What motivates you the most to keep going?',
-  'single_choice',
+  'multi_choice',
   '[
-    {"value":"results",    "label":"Seeing visible results",          "icon":"trending-up"},
-    {"value":"discipline", "label":"Building discipline and habits",  "icon":"check-square"},
-    {"value":"community",  "label":"Community and accountability",    "icon":"users"},
-    {"value":"health",     "label":"Long-term health and longevity",  "icon":"heart"}
+    {"value":"results",    "label":"Seeing visible results",          "icon":"TrendingUp"},
+    {"value":"discipline", "label":"Building discipline and habits",  "icon":"CheckSquare"},
+    {"value":"community",  "label":"Community and accountability",    "icon":"Users"},
+    {"value":"health",     "label":"Long-term health and longevity",  "icon":"Heart"}
   ]',
   'motivation'
 );

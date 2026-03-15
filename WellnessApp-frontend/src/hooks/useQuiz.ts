@@ -70,9 +70,7 @@ export function useQuiz() {
 
     try {
       const { currentNode: prevNode } = await api.goBack(sessionId);
-      if (currentNode?.type === 'question') {
-        setStepCount(prev => Math.max(0, prev - 1));
-      }
+      setStepCount(prev => Math.max(0, prev - 1));
       setCurrentNode(prevNode);
     } catch (err) {
       if (err instanceof Error && err.message.includes('beginning')) {
@@ -82,7 +80,7 @@ export function useQuiz() {
       setError(err instanceof Error ? err.message : 'Failed to go back');
       setStage('error');
     }
-  }, [sessionId, stepCount]);
+  }, [sessionId]);
 
   const refreshNode = useCallback(async () => {
     if (!sessionId || stage !== 'quiz') return;

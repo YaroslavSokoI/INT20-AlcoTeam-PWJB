@@ -25,8 +25,8 @@ UPDATE question_nodes SET translations = '{
     "title": "Який ваш вік?",
     "options": [
       {"label": "До 25"},
-      {"label": "25–35"},
-      {"label": "36–50"},
+      {"label": "25 до 35"},
+      {"label": "36 до 50"},
       {"label": "50+"}
     ]
   }
@@ -368,3 +368,24 @@ UPDATE offer_nodes SET translations = '{
     "why_text": "Хронічний стрес це прихований блокер кожної цілі здоров''я. Ця програма дає науково обґрунтовані інструменти для перезавантаження нервової системи."
   }
 }' WHERE node_id = '00000000-0000-0000-0000-000000000056';
+
+-- ============================================================
+-- COPY TRANSLATIONS TO PUBLISHED TABLES
+-- (published tables are populated before translations column exists,
+--  so they miss the translation data)
+-- ============================================================
+
+UPDATE published_question_nodes pq
+SET translations = q.translations
+FROM question_nodes q
+WHERE pq.node_id = q.node_id AND q.translations != '{}';
+
+UPDATE published_info_nodes pi
+SET translations = i.translations
+FROM info_nodes i
+WHERE pi.node_id = i.node_id AND i.translations != '{}';
+
+UPDATE published_offer_nodes po
+SET translations = o.translations
+FROM offer_nodes o
+WHERE po.node_id = o.node_id AND o.translations != '{}';
