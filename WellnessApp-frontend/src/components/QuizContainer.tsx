@@ -18,10 +18,10 @@ export function QuizContainer() {
     startQuiz();
   }, [startQuiz]);
 
-  // Re-fetch current node when user changes language
+  // Re-fetch content from backend when user changes language
   useEffect(() => {
     refreshNode();
-  }, [i18n.language]);
+  }, [i18n.language, refreshNode]);
 
   const handleBack = useCallback(() => {
     if (!hasHistory) {

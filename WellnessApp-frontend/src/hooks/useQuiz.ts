@@ -83,10 +83,15 @@ export function useQuiz() {
   }, [sessionId]);
 
   const refreshNode = useCallback(async () => {
-    if (!sessionId || stage !== 'quiz') return;
+    if (!sessionId) return;
     try {
-      const { currentNode: node } = await api.getSession(sessionId);
-      if (node) setCurrentNode(node);
+      if (stage === 'quiz') {
+        const { currentNode: node } = await api.getSession(sessionId);
+        if (node) setCurrentNode(node);
+      } else if (stage === 'result') {
+        const result = await api.getOffer(sessionId);
+        setOfferResult(result);
+      }
     } catch {
       // ignore — non-critical
     }
